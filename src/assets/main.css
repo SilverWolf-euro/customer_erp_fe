@@ -1,0 +1,50 @@
+@import './base.css';
+/* Đảm bảo bạn đã import font Roboto từ Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@600&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+body {
+  font-family: 'Roboto, sans-serif';
+  font-size: 14px;
+}
+
+.main__title {
+  font-family: 'Roboto, sans-serif';
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 36px;
+  text-align: left;
+}
+.p-tree-node-children {
+  display: flex !important;
+  flex-direction: row !important;
+}
+.p-inputtext.p-component.p-inputtext-fluid.p-datepicker-input {
+  border: none !important;
+}
+#app {
+  font-weight: normal;
+  width: 100%;
+}
+
+a,
+.green {
+  text-decoration: none;
+  color: hsla(160, 100%, 37%, 1);
+  transition: 0.4s;
+  padding: 3px;
+}
+
+@media (hover: hover) {
+  a:hover {
+    background-color: hsla(160, 100%, 37%, 0.2);
+  }
+}
+
+@media (min-width: 1024px) {
+  body {
+    display: flex;
+    place-items: center;
+  }
+}

@@ -1,0 +1,39 @@
+@import './fonts/flaticon.css';
+@import './fonts/bold/style.css';
+@import './fonts/duotone/style.css';
+@import './fonts/fill/style.css';
+@import './fonts/light/style.css';
+@import './fonts/regular/style.css';
+@import './fonts/thin/style.css';
+@import './css/style.css';/*# sourceMappingURL=custom.css.map */
+
+@media print {
+	body {
+		margin: 0 !important;
+	}
+}
+
+.main-container {
+	font-family: 'Lato';
+	width: fit-content;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.ck-content {
+	font-family: 'Lato';
+	line-height: 1.6;
+	word-break: break-word;
+}
+
+.editor-container_classic-editor .editor-container__editor {
+	min-width: 795px;
+	max-width: 795px;
+}
+.main-content-no-layout{
+	min-height: 100vh;
+    /* padding-left: 275px; */
+    /* padding-right: 25px; */
+    /* padding-top: 125px; */
+    padding: 5%;
+}
