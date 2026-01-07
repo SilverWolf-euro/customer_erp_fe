@@ -241,8 +241,8 @@ export function UpdateDebtModal({ open, onOpenChange, order, customer, onPayment
                   id="due-date"
                   type="date"
                   value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled
+                  className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500 cursor-not-allowed"
                 />
               </div>
               <div className="space-y-2 col-span-2">

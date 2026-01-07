@@ -33,6 +33,7 @@ export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerOption | null>(null)
   const [customerName, setCustomerName] = useState("")
   const [salesPerson, setSalesPerson] = useState("")
+  const [supportPerson, setSupportPerson] = useState("")
   const [contractStatus, setContractStatus] = useState(1)
     // Fetch customers when modal opens
     useEffect(() => {
@@ -96,12 +97,17 @@ export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
   }
 
   const updateOrder = (index: number, field: keyof Order, value: string) => {
-    const newOrders = [...orders]
-    newOrders[index][field] = value
-
-    // Auto-calculate due date (nếu cần giữ logic này, có thể bỏ qua nếu không liên quan quantity/unitPrice)
-
-    setOrders(newOrders)
+    const newOrders = [...orders];
+    newOrders[index][field] = value;
+    // Tự động tính số tiền phải thu nếu thay đổi số lượng hoặc đơn giá
+    if (field === 'quantity' || field === 'unitPrice') {
+      const quantity = field === 'quantity' ? Number(value) : Number(newOrders[index].quantity);
+      const unitPrice = field === 'unitPrice' ? Number(value) : Number(newOrders[index].unitPrice);
+      if (!isNaN(quantity) && !isNaN(unitPrice) && quantity && unitPrice) {
+        newOrders[index].totalAmount = String(quantity * unitPrice);
+      }
+    }
+    setOrders(newOrders);
   }
 
   const handleSave = async () => {
@@ -189,20 +195,34 @@ export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
                     <option value={2}>Nhựa gỗ</option>
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <label htmlFor="sales-person" className="block text-sm font-medium text-gray-700">
-                    Sale phụ trách
-                  </label>
-                  <input
-                    id="sales-person"
-                    type="text"
-                    placeholder="Auto-fill sau khi chọn khách hàng"
-                    value={salesPerson}
-                    onChange={(e) => setSalesPerson(e.target.value)}
-                    disabled
-                    className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500 cursor-not-allowed"
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <label htmlFor="sales-person" className="block text-sm font-medium text-gray-700">
+                      Sale phụ trách
+                    </label>
+                    <input
+                      id="sales-person"
+                      type="text"
+                      placeholder="Auto-fill sau khi chọn khách hàng"
+                      value={salesPerson}
+                      onChange={(e) => setSalesPerson(e.target.value)}
+                      disabled
+                      className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500 cursor-not-allowed"
+                    />
+                  </div>
+                  {/* <div className="space-y-2">
+                    <label htmlFor="support-person" className="block text-sm font-medium text-gray-700">
+                      Hỗ trợ phụ trách
+                    </label>
+                    <input
+                      id="support-person"
+                      type="text"
+                      placeholder="Auto-fill sau khi chọn khách hàng"
+                      value={supportPerson}
+                      onChange={(e) => setSupportPerson(e.target.value)}
+                      disabled
+                      className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500 cursor-not-allowed"
+                    />
+                  </div> */}
               </div>
             </div>
 
@@ -258,6 +278,11 @@ export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
                       onChange={(e) => updateOrder(index, "saleDate", e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                    {order.saleDate && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        Hiển thị: {order.saleDate.split('-').reverse().join('/')}
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <label htmlFor={`total-amount-${index}`} className="block text-sm font-medium text-gray-700">
@@ -300,7 +325,7 @@ export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
                   </div>
                   <div className="space-y-2">
                     <label htmlFor={`due-date-${index}`} className="block text-sm font-medium text-gray-700">
-                      Ngày đến hạn
+                      Ngày đến hạn <span className="text-red-600">*</span>
                     </label>
                     <input
                       id={`due-date-${index}`}
@@ -309,32 +334,13 @@ export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
                       onChange={(e) => updateOrder(index, "dueDate", e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                    {order.dueDate && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        Hiển thị: {order.dueDate.split('-').reverse().join('/')}
+                      </div>
+                    )}
                   </div>
-                  <div className="space-y-2">
-                    <label htmlFor={`paid-amount-${index}`} className="block text-sm font-medium text-gray-700">
-                      Số tiền đã thu (VNĐ)
-                    </label>
-                    <input
-                      id={`paid-amount-${index}`}
-                      type="number"
-                      placeholder="Nếu có"
-                      value={order.paidAmount}
-                      onChange={(e) => updateOrder(index, "paidAmount", e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor={`paid-date-${index}`} className="block text-sm font-medium text-gray-700">
-                      Ngày thu
-                    </label>
-                    <input
-                      id={`paid-date-${index}`}
-                      type="date"
-                      value={order.paidDate}
-                      onChange={(e) => updateOrder(index, "paidDate", e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
+                  
                 </div>
               </div>
             ))}

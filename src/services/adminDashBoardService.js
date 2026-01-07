@@ -1,5 +1,8 @@
-import api from "./api";
+// adminDashBoardService.js
+import api from './api';
 
-const fetchAllDashboard = () => api.get("/api/Dashboard/dashboard");
+const fetchAllDashboard = (params) => {
+  return api.get('/api/Dashboard/dashboard', { params });
+};
 
 export default fetchAllDashboard;
