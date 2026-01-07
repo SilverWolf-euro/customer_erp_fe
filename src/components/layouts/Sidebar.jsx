@@ -68,8 +68,7 @@ export default function Sidebar({
     }
     if (isMobile) setMobileOpen(false);
     // Điều hướng cho các module mới
-    if (moduleId === "dashboard") navigate("/dashboard");
-    else if (moduleId === "debt-dashboard") navigate("/debt-dashboard");
+    if (moduleId === "debt-dashboard") navigate("/debt-dashboard");
     else if (moduleId === "debt") navigate("/debt");
     else if (moduleId === "customer-new") navigate("/customer-new");
     else if (moduleId === "sale-new") navigate("/sale-new");
