@@ -23,7 +23,17 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    let newForm = { ...form, [name]: value };
+    // Tự động tính số tiền phải thu nếu thay đổi số lượng hoặc đơn giá
+    if (name === 'quantity' || name === 'unitPrice') {
+      const quantity = name === 'quantity' ? Number(value) : Number(newForm.quantity);
+      const unitPrice = name === 'unitPrice' ? Number(value) : Number(newForm.unitPrice);
+      if (!isNaN(quantity) && !isNaN(unitPrice) && quantity && unitPrice) {
+        newForm.totalAmount = String(quantity * unitPrice);
+      }
+    }
+    setForm(newForm);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -102,6 +112,11 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
               className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400"
               required
             />
+            {form.saleDate && (
+              <div className="text-xs text-gray-500 mt-1">
+                Hiển thị: {form.saleDate.split('-').reverse().join('/')}
+              </div>
+            )}
           </div>
           <div>
             <label className="block mb-1 font-medium">Số tiền phải thu (VNĐ) *</label>
@@ -140,7 +155,7 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
             />
           </div>
           <div>
-            <label className="block mb-1 font-medium">Ngày đến hạn</label>
+            <label className="block mb-1 font-medium">Ngày đến hạn *</label>
             <input
               type="date"
               name="dueDate"
@@ -148,28 +163,13 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
               onChange={handleChange}
               className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400"
             />
+            {form.dueDate && (
+              <div className="text-xs text-gray-500 mt-1">
+                Hiển thị: {form.dueDate.split('-').reverse().join('/')}
+              </div>
+            )}
           </div>
-          <div>
-            <label className="block mb-1 font-medium">Số tiền đã thu (VNĐ)</label>
-            <input
-              type="number"
-              name="paidAmount"
-              value={form.paidAmount}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400"
-              placeholder="Nếu có"
-            />
-          </div>
-          <div>
-            <label className="block mb-1 font-medium">Ngày thu</label>
-            <input
-              type="date"
-              name="paidDate"
-              value={form.paidDate}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400"
-            />
-          </div>
+          
           <div className="flex justify-end">
             <button
               type="button"

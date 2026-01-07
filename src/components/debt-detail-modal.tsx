@@ -20,6 +20,7 @@ interface Order {
 interface Customer {
   name: string
   salesPerson: string
+  supportPerson: string
 }
 
 interface DebtDetailModalProps {
@@ -65,6 +66,10 @@ export function DebtDetailModal({ open, onOpenChange, order, customer }: DebtDet
               <div className="space-y-1">
                 <label className="block text-xs text-gray-500">Sale phụ trách</label>
                 <div className="font-medium text-gray-900">{customer.salesPerson}</div>
+              </div>
+              <div className="space-y-1">
+                <label className="block text-xs text-gray-500">Hỗ trợ phụ trách</label>
+                <div className="font-medium text-gray-900">{customer.supportPerson}</div>
               </div>
             </div>
           </div>

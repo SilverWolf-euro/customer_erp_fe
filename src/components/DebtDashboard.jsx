@@ -38,23 +38,24 @@ const DebtDashboard = () => {
   const [toMonth, setToMonth] = useState('');
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const params = {};
-        if (customerId) params.customerId = customerId;
-        if (fromMonth) params.fromMonth = fromMonth;
-        if (toMonth) params.toMonth = toMonth;
-        const response = await fetchAllDashboard({ params });
-        setData(response.data.object);
-      } catch (err) {
-        setError('Lỗi khi lấy dữ liệu dashboard');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [customerId, fromMonth, toMonth]);
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (customerId) params.customerId = customerId;
+      if (fromMonth) params.fromMonth = fromMonth;
+      if (toMonth) params.toMonth = toMonth;
+      console.log('Gọi API với params:', params);
+      const response = await fetchAllDashboard(params); // <-- Sửa ở đây
+      setData(response.data.object);
+    } catch (err) {
+      setError('Lỗi khi lấy dữ liệu dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchData();
+}, [customerId, fromMonth, toMonth]);
 
   // Helper for month labels
   const getMonthLabels = (arr) => arr?.map((item) => item.monthKey);
@@ -68,6 +69,8 @@ const DebtDashboard = () => {
         data: data?.debtByMonth?.map((item) => item.remainingAmount) || [],
         backgroundColor: '#3b82f6',
         yAxisID: 'y',
+        barThickness: 40, // Giới hạn độ rộng cột
+        maxBarThickness: 50,
       },
       {
         label: '% tăng trưởng',
@@ -97,6 +100,10 @@ const DebtDashboard = () => {
         title: { display: true, text: '% tăng trưởng' },
         grid: { drawOnChartArea: false },
       },
+      x: {
+        // Giới hạn độ rộng cột
+        maxBarThickness: 50,
+      },
     },
   };
 
@@ -115,12 +122,17 @@ const DebtDashboard = () => {
       data: Object.values(overdueByMonth).map((month) => month[bucket] || 0),
       backgroundColor: overdueColors[idx],
       stack: 'Stack 0',
+      barThickness: 40,
+      maxBarThickness: 50,
     })),
   };
   const overdueBarOptions = {
     responsive: true,
     plugins: { legend: { position: 'top' } },
-    scales: { x: { stacked: true }, y: { stacked: true } },
+    scales: {
+      x: { stacked: true, maxBarThickness: 50 },
+      y: { stacked: true },
+    },
   };
 
   // Tỷ trọng công nợ theo khách hàng (Pie)
@@ -173,12 +185,17 @@ const DebtDashboard = () => {
       }),
       backgroundColor: overdueColors[idx % overdueColors.length],
       stack: 'Stack 0',
+      barThickness: 60,
+      maxBarThickness: 70,
     })),
   };
   const top5BarOptions = {
     responsive: true,
     plugins: { legend: { position: 'top' } },
-    scales: { x: { stacked: true }, y: { stacked: true } },
+    scales: {
+      x: { stacked: true, maxBarThickness: 50 },
+      y: { stacked: true },
+    },
   };
 
   // Bộ lọc
@@ -238,13 +255,17 @@ const DebtDashboard = () => {
             <h3 className="font-semibold mb-2">Phân bổ công nợ quá hạn theo tháng</h3>
             <Bar data={overdueBarData} options={overdueBarOptions} />
           </div>
-          <div className="bg-white rounded shadow p-4">
+          <div className="bg-white rounded shadow p-4" style={{ height: 320 }}>
             <h3 className="font-semibold mb-2">Tỷ trọng công nợ theo khách hàng</h3>
-            <Pie data={debtSharePieData} />
+            <div style={{ height: 250 }}>
+              <Pie data={debtSharePieData} options={{ maintainAspectRatio: false }} />
+            </div>
           </div>
-          <div className="bg-white rounded shadow p-4">
+          <div className="bg-white rounded shadow p-4" style={{ height: 320 }}>
             <h3 className="font-semibold mb-2">Tổng hợp trạng thái công nợ</h3>
-            <Pie data={statusPieData} />
+            <div style={{ height: 250 }}>
+              <Pie data={statusPieData} options={{ maintainAspectRatio: false }} />
+            </div>
           </div>
           <div className="bg-white rounded shadow p-4 col-span-2">
             <h3 className="font-semibold mb-2">Top 5 khách hàng có công nợ cao nhất theo tháng</h3>

@@ -35,6 +35,7 @@ interface Customer {
   contractId: string
   name: string
   salesPerson: string
+  supportPerson: string
   totalDebt: number
   orderCount: number
   orders: Order[]
@@ -293,8 +294,20 @@ export function DebtManagementPage() {
               </div>
             ) : (
               filteredCustomers.map((customer) => {
+
+                // Sắp xếp order theo thứ tự trạng thái mong muốn
+                const statusOrder = ["overdue", "due", "coming-due", "not-due-yet", "paid"];
+                const sortOrders = (orders: Order[]) => {
+                  return [...orders].sort((a, b) => {
+                    const aIdx = statusOrder.indexOf(a.status);
+                    const bIdx = statusOrder.indexOf(b.status);
+                    return aIdx - bIdx;
+                  });
+                };
                 const relevantOrders =
-                  activeTab === "all" ? customer.orders : customer.orders.filter((o) => o.status === activeTab)
+                  activeTab === "all"
+                    ? sortOrders(customer.orders)
+                    : sortOrders(customer.orders.filter((o) => o.status === activeTab));
 
                 if (relevantOrders.length === 0) return null
 
@@ -318,6 +331,10 @@ export function DebtManagementPage() {
                         <div>
                           <div className="text-xs text-gray-500 mb-1">Sale phụ trách</div>
                           <div className="text-black">{customer.salesPerson}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500 mb-1">Hỗ trợ phụ trách</div>
+                          <div className="text-black">{customer.supportPerson}</div>
                         </div>
                         <div>
                           <div className="text-xs text-gray-500 mb-1">Tổng công nợ</div>
@@ -346,7 +363,7 @@ export function DebtManagementPage() {
                       </div>
                     </div>
 
-                    {(isExpanded || !isPaidTab) && (
+                    {isExpanded && (
                       <div className="border-t border-gray-200">
                         <div className="overflow-x-auto">
                           <table className="w-full">
@@ -355,13 +372,13 @@ export function DebtManagementPage() {
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-600">Số hợp đồng</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-600">Tên hàng</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-600">Ngày bán</th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Số lượng</th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Đơn giá</th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">
                                   Số tiền phải thu
                                 </th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Đã thu</th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Còn phải thu</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Số lượng</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Đơn giá</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-600">Ngày đến hạn</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-600">Trạng thái</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-600">Thao tác</th>
@@ -373,6 +390,8 @@ export function DebtManagementPage() {
                                   <td className="px-4 py-4 text-sm text-black">{order.contractNumber}</td>
                                   <td className="px-4 py-4 text-sm text-black">{order.productName}</td>
                                   <td className="px-4 py-4 text-sm text-black">{order.saleDate}</td>
+                                  <td className="px-4 py-4 text-sm text-right text-black">{order.quantity ?? '-'}</td>
+                                  <td className="px-4 py-4 text-sm text-right text-black">{order.unitPrice ? formatCurrency(order.unitPrice) : '-'}</td>
                                   <td className="px-4 py-4 text-sm text-right text-black">{formatCurrency(order.totalAmount)}</td>
                                   <td className="px-4 py-4 text-sm text-right">
                                     <div className="space-y-1">
@@ -396,8 +415,6 @@ export function DebtManagementPage() {
                                     </div>
                                   </td>
                                   <td className="px-4 py-4 text-sm text-right font-semibold text-red-600">{formatCurrency(order.remaining)}</td>
-                                  <td className="px-4 py-4 text-sm text-right text-black">{order.quantity ?? '-'}</td>
-                                  <td className="px-4 py-4 text-sm text-right text-black">{order.unitPrice ? formatCurrency(order.unitPrice) : '-'}</td>
                                   <td className="px-4 py-4 text-sm text-black">{order.dueDate}</td>
                                   <td className="px-4 py-4">{getStatusBadge(order.status)}</td>
                                   <td className="px-4 py-4">
