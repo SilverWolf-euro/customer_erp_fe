@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import fetchAllDashboard from '../services/adminDashBoardService';
 import DebtKPIDashboard from './DebtKPIDashboard';
+import 'chart.js/auto';
+
 import {
   Bar,
   Line,
@@ -18,16 +20,16 @@ import {
   Legend,
 } from 'chart.js';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  ArcElement,
-  Tooltip,
-  Legend
-);
+// ChartJS.register(
+//   CategoryScale,
+//   LinearScale,
+//   BarElement,
+//   PointElement,
+//   LineElement,
+//   ArcElement,
+//   Tooltip,
+//   Legend
+// );
 
 const DebtDashboard = () => {
   const [data, setData] = useState(null);

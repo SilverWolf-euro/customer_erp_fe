@@ -17,7 +17,7 @@ export default function MainLayout() {
     debt: "debt",
     "customer-new": "customer-new",
     "sale-new": "sale-new",
-    dashboard: "dashboard",
+    dashboard: "debt-dashboard",
     "debt-dashboard": "debt-dashboard",
   };
 
@@ -57,7 +57,7 @@ export default function MainLayout() {
       debt: "/debt",
       "customer-new": "/customer-new",
       "sale-new": "/sale-new",
-      dashboard: "/dashboard",
+      dashboard: "/debt-dashboard",
       "debt-dashboard": "/debt-dashboard",
     };
     const targetRoute = routeMap[moduleId];
