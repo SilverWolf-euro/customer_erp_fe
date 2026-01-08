@@ -35,6 +35,9 @@ export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
   const [salesPerson, setSalesPerson] = useState("")
   const [supportPerson, setSupportPerson] = useState("")
   const [contractStatus, setContractStatus] = useState(1)
+  // Lưu lỗi cho từng trường
+  const [customerError, setCustomerError] = useState("");
+  const [orderErrors, setOrderErrors] = useState<any[]>([]);
     // Fetch customers when modal opens
     useEffect(() => {
       if (isOpen) {
@@ -111,18 +114,37 @@ export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
   }
 
   const handleSave = async () => {
+    let hasError = false;
+    // Validate khách hàng
     if (!selectedCustomer) {
-      alert("Vui lòng chọn khách hàng!")
-      return
+      setCustomerError("Vui lòng chọn tên khách hàng");
+      hasError = true;
+    } else {
+      setCustomerError("");
     }
+    // Validate từng đơn hàng
+    const newOrderErrors = orders.map((order) => {
+      const err: any = {};
+      if (!order.contractNumber) err.contractNumber = "Vui lòng nhập số hợp đồng";
+      if (!order.productName) err.productName = "Vui lòng nhập tên hàng";
+      if (!order.saleDate) err.saleDate = "Vui lòng chọn ngày bán hàng";
+      if (!order.dueDate) err.dueDate = "Vui lòng chọn ngày đến hạn";
+      if (!order.quantity) err.quantity = "Vui lòng nhập số lượng";
+      if (!order.unitPrice) err.unitPrice = "Vui lòng nhập đơn giá";
+      if (!order.totalAmount) err.totalAmount = "Vui lòng nhập số tiền phải thu";
+      return err;
+    });
+    setOrderErrors(newOrderErrors);
+    if (newOrderErrors.some(e => Object.keys(e).length > 0)) hasError = true;
+    if (hasError) return;
     // Chuẩn bị dữ liệu gửi API
     const contract = {
       contractNumber: orders[0].contractNumber,
-      customerId: selectedCustomer.customerID,
-      salesId: selectedCustomer.saleID,
+      customerId: selectedCustomer!.customerID,
+      salesId: selectedCustomer!.saleID,
       contractStatus,
       isDelete: 0
-    }
+    };
     const orderItems = orders.map(o => ({
       productName: o.productName,
       orderNumber: o.contractNumber,
@@ -134,14 +156,14 @@ export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
       amountCollected: Number(o.paidAmount || 0),
       status: 0,
       isDelete: 0
-    }))
+    }));
     try {
-      await createContractWithOrder({ contract, orderItems })
-      onOpenChange(false)
+      await createContractWithOrder({ contract, orderItems });
+      onOpenChange(false);
     } catch (err) {
-      alert("Có lỗi khi thêm công nợ!")
+      alert("Có lỗi khi thêm công nợ!");
     }
-  }
+  };
 
   if (!isOpen) return null
 
@@ -180,6 +202,9 @@ export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
                       <option key={c.customerID} value={c.customerID}>{c.customerName}</option>
                     ))}
                   </select>
+                  {customerError && (
+                    <div className="text-red-600 text-xs mt-1">{customerError}</div>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="contract-status" className="block text-sm font-medium text-gray-700">
@@ -252,6 +277,9 @@ export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
                       maxLength={20}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                    {orderErrors[index]?.contractNumber && (
+                      <div className="text-red-600 text-xs mt-1">{orderErrors[index].contractNumber}</div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <label htmlFor={`product-${index}`} className="block text-sm font-medium text-gray-700">
@@ -266,6 +294,9 @@ export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
                       maxLength={50}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                    {orderErrors[index]?.productName && (
+                      <div className="text-red-600 text-xs mt-1">{orderErrors[index].productName}</div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <label htmlFor={`sale-date-${index}`} className="block text-sm font-medium text-gray-700">
@@ -278,10 +309,66 @@ export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
                       onChange={(e) => updateOrder(index, "saleDate", e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                    {orderErrors[index]?.saleDate && (
+                      <div className="text-red-600 text-xs mt-1">{orderErrors[index].saleDate}</div>
+                    )}
                     {order.saleDate && (
                       <div className="text-xs text-gray-500 mt-1">
                         Hiển thị: {order.saleDate.split('-').reverse().join('/')}
                       </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor={`due-date-${index}`} className="block text-sm font-medium text-gray-700">
+                      Ngày đến hạn <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      id={`due-date-${index}`}
+                      type="date"
+                      value={order.dueDate}
+                      onChange={(e) => updateOrder(index, "dueDate", e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    {orderErrors[index]?.dueDate && (
+                      <div className="text-red-600 text-xs mt-1">{orderErrors[index].dueDate}</div>
+                    )}
+                    {order.dueDate && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        Hiển thị: {order.dueDate.split('-').reverse().join('/')}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label htmlFor={`quantity-${index}`} className="block text-sm font-medium text-gray-700">
+                      Số lượng <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      id={`quantity-${index}`}
+                      type="number"
+                      placeholder="Nhập số lượng"
+                      value={order.quantity}
+                      onChange={(e) => updateOrder(index, "quantity", e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    {orderErrors[index]?.quantity && (
+                      <div className="text-red-600 text-xs mt-1">{orderErrors[index].quantity}</div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor={`unit-price-${index}`} className="block text-sm font-medium text-gray-700">
+                      Đơn giá (VNĐ) <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      id={`unit-price-${index}`}
+                      type="number"
+                      placeholder="Nhập đơn giá"
+                      value={order.unitPrice}
+                      onChange={(e) => updateOrder(index, "unitPrice", e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    {orderErrors[index]?.unitPrice && (
+                      <div className="text-red-600 text-xs mt-1">{orderErrors[index].unitPrice}</div>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -296,48 +383,8 @@ export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
                       onChange={(e) => updateOrder(index, "totalAmount", e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor={`quantity-${index}`} className="block text-sm font-medium text-gray-700">
-                      Số lượng <span className="text-red-600">*</span>
-                    </label>
-                    <input
-                      id={`quantity-${index}`}
-                      type="number"
-                      placeholder="Nhập số lượng"
-                      value={order.quantity}
-                      onChange={(e) => updateOrder(index, "quantity", e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor={`unit-price-${index}`} className="block text-sm font-medium text-gray-700">
-                      Đơn giá (VNĐ) <span className="text-red-600">*</span>
-                    </label>
-                    <input
-                      id={`unit-price-${index}`}
-                      type="number"
-                      placeholder="Nhập đơn giá"
-                      value={order.unitPrice}
-                      onChange={(e) => updateOrder(index, "unitPrice", e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor={`due-date-${index}`} className="block text-sm font-medium text-gray-700">
-                      Ngày đến hạn <span className="text-red-600">*</span>
-                    </label>
-                    <input
-                      id={`due-date-${index}`}
-                      type="date"
-                      value={order.dueDate}
-                      onChange={(e) => updateOrder(index, "dueDate", e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    {order.dueDate && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        Hiển thị: {order.dueDate.split('-').reverse().join('/')}
-                      </div>
+                    {orderErrors[index]?.totalAmount && (
+                      <div className="text-red-600 text-xs mt-1">{orderErrors[index].totalAmount}</div>
                     )}
                   </div>
                   

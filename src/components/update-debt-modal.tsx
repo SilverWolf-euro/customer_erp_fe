@@ -97,6 +97,14 @@ export function UpdateDebtModal({ open, onOpenChange, order, customer, onPayment
   const handleUpdate = async () => {
     // Lọc các payment mới (canDelete = true và có đủ thông tin)
     const newPayments = paymentHistory.filter(p => p.canDelete && p.amount > 0 && p.date)
+    // Tổng số tiền đã thu mới
+    const totalNewPaid = newPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
+    // Số còn phải thu hiện tại
+    const remaining = order.remaining
+    if (totalNewPaid > remaining) {
+      alert("Vui lòng nhập lại Số tiền đã thu")
+      return
+    }
     try {
       for (const p of newPayments) {
         await insertPayment({

@@ -1,6 +1,30 @@
 // Header.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+// Giải mã JWT, hỗ trợ Unicode cho tên tiếng Việt
+function decodeJWT(token) {
+  if (!token) return {};
+  try {
+    const payload = token.split('.')[1];
+    // Chuyển base64url về base64
+    let base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    // Bổ sung padding nếu thiếu
+    while (base64.length % 4) base64 += '=';
+    // Giải mã Unicode
+    const jsonStr = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join('')
+    );
+    return JSON.parse(jsonStr);
+  } catch {
+    return {};
+  }
+}
+
 
 export default function Header() {
   const [showNotifications, setShowNotifications] = useState(false);
@@ -164,44 +188,24 @@ export default function Header() {
           )}
         </div>
 
-        {/* User Menu */}
-        <div className="relative">
+        {/* Chào mừng tên người dùng + Đăng xuất */}
+        <div className="flex items-center gap-3 px-2 py-1.5 rounded-2xl bg-white border border-gray-200">
+          {/* Lấy accessToken từ localStorage và decode */}
+          {(() => {
+            const accessToken = localStorage.getItem("accessToken") || "";
+            const userInfo = decodeJWT(accessToken);
+            const fullName = userInfo.unique_name || "Người dùng";
+            return (
+              <span className="font-semibold text-blue-600">Chào mừng, {fullName}</span>
+            );
+          })()}
           <button
-            onClick={toggleUserMenu}
-            className="flex items-center gap-2 md:gap-3 px-2 py-1.5 rounded-2xl transition-colors duration-200 hover:bg-gray-100"
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-3 py-2 text-red-500 rounded-lg hover:bg-red-50 transition-colors"
           >
-            <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-full flex items-center justify-center font-bold text-base">
-              U
-            </div>
-            <span className="text-xs text-gray-500">▼</span>
+            <span className="text-base">🚪</span>
+            <span className="text-sm">Đăng xuất</span>
           </button>
-
-          {showUserMenu && (
-            <div className="absolute top-12 right-0 w-60 bg-white rounded-xl shadow-xl z-50 overflow-hidden">
-              <div className="py-2">
-                {userMenuItems.map((menuItem) => (
-                  <button
-                    key={menuItem.label}
-                    onClick={() => handleMenuClick(menuItem.action)}
-                    className="w-full px-4 py-2.5 flex items-center gap-3 text-left transition-colors duration-200 hover:bg-gray-100"
-                  >
-                    <span className="text-base">{menuItem.icon}</span>
-                    <span className="text-sm">{menuItem.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="h-px bg-gray-200"></div>
-
-              <button
-                onClick={handleLogout}
-                className="w-full px-4 py-2.5 flex items-center gap-3 text-left text-red-500 transition-colors duration-200 hover:bg-red-50"
-              >
-                <span className="text-base">🚪</span>
-                <span className="text-sm">Đăng xuất</span>
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </header>

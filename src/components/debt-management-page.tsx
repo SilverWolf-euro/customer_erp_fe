@@ -161,7 +161,7 @@ export function DebtManagementPage() {
     const styles = {
       "coming-due": "bg-blue-500/10 text-black border-blue-500/20",
       due: "bg-yellow-500/10 text-black border-yellow-500/20",
-      overdue: "bg-red-500/10 text-black border-red-500/20",
+      overdue: "bg-red-500/50 text-black border-red-500/50",
       paid: "bg-green-500/10 text-black border-green-500/20",
       "not-due-yet": "bg-gray-300/10 text-black border-gray-300/20",
     }
@@ -415,7 +415,22 @@ export function DebtManagementPage() {
                                     </div>
                                   </td>
                                   <td className="px-4 py-4 text-sm text-right font-semibold text-red-600">{formatCurrency(order.remaining)}</td>
-                                  <td className="px-4 py-4 text-sm text-black">{order.dueDate}</td>
+                                  <td className="px-4 py-4 text-sm text-black">
+                                    {order.dueDate}
+                                    {order.status === "overdue" && order.dueDate && (
+                                      <div className="text-xs text-red-600 mt-1">
+                                        Quá hạn {(() => {
+                                          const due = new Date(order.dueDate)
+                                          const now = new Date()
+                                          // Đặt giờ về 0 để tính đúng số ngày
+                                          due.setHours(0,0,0,0)
+                                          now.setHours(0,0,0,0)
+                                          const diff = Math.floor((now.getTime() - due.getTime()) / (1000*60*60*24))
+                                          return diff > 0 ? diff : 0
+                                        })()} ngày
+                                      </div>
+                                    )}
+                                  </td>
                                   <td className="px-4 py-4">{getStatusBadge(order.status)}</td>
                                   <td className="px-4 py-4">
                                     <div className="flex gap-2">

@@ -119,17 +119,21 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
             )}
           </div>
           <div>
-            <label className="block mb-1 font-medium">Số tiền phải thu (VNĐ) *</label>
+            <label className="block mb-1 font-medium">Ngày đến hạn *</label>
             <input
-              type="number"
-              name="totalAmount"
-              value={form.totalAmount}
+              type="date"
+              name="dueDate"
+              value={form.dueDate}
               onChange={handleChange}
               className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400"
-              required
-              placeholder="Nhập số tiền"
             />
+            {form.dueDate && (
+              <div className="text-xs text-gray-500 mt-1">
+                Hiển thị: {form.dueDate.split('-').reverse().join('/')}
+              </div>
+            )}
           </div>
+          
           <div>
             <label className="block mb-1 font-medium">Số lượng *</label>
             <input
@@ -155,19 +159,16 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
             />
           </div>
           <div>
-            <label className="block mb-1 font-medium">Ngày đến hạn *</label>
+            <label className="block mb-1 font-medium">Số tiền phải thu (VNĐ) *</label>
             <input
-              type="date"
-              name="dueDate"
-              value={form.dueDate}
+              type="number"
+              name="totalAmount"
+              value={form.totalAmount}
               onChange={handleChange}
               className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400"
+              required
+              placeholder="Nhập số tiền"
             />
-            {form.dueDate && (
-              <div className="text-xs text-gray-500 mt-1">
-                Hiển thị: {form.dueDate.split('-').reverse().join('/')}
-              </div>
-            )}
           </div>
           
           <div className="flex justify-end">
