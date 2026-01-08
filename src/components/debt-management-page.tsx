@@ -471,7 +471,7 @@ export function DebtManagementPage() {
         </div>
       </div>
 
-      <AddDebtModal isOpen={isAddModalOpen} onOpenChange={setIsAddModalOpen} />
+      <AddDebtModal isOpen={isAddModalOpen} onOpenChange={setIsAddModalOpen} onDebtAdded={fetchData} />
       <AddOrderModal
         isOpen={isAddOrderModalOpen}
         onOpenChange={setIsAddOrderModalOpen}

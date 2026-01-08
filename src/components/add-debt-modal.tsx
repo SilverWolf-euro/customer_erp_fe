@@ -26,9 +26,10 @@ interface CustomerOption {
 interface AddDebtModalProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
+  onDebtAdded?: () => void
 }
 
-export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
+export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModalProps) {
   const [customers, setCustomers] = useState<CustomerOption[]>([])
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerOption | null>(null)
   const [customerName, setCustomerName] = useState("")
@@ -129,8 +130,26 @@ export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
       if (!order.productName) err.productName = "Vui lòng nhập tên hàng";
       if (!order.saleDate) err.saleDate = "Vui lòng chọn ngày bán hàng";
       if (!order.dueDate) err.dueDate = "Vui lòng chọn ngày đến hạn";
-      if (!order.quantity) err.quantity = "Vui lòng nhập số lượng";
-      if (!order.unitPrice) err.unitPrice = "Vui lòng nhập đơn giá";
+      // Validate dueDate >= saleDate
+      if (order.saleDate && order.dueDate) {
+        const sale = new Date(order.saleDate);
+        const due = new Date(order.dueDate);
+        if (due < sale) {
+          err.dueDate = "Ngày đến hạn không được nhỏ hơn Ngày bán hàng";
+        }
+      }
+      // Validate quantity
+      if (!order.quantity) {
+        err.quantity = "Vui lòng nhập số lượng";
+      } else if (isNaN(Number(order.quantity)) || Number(order.quantity) <= 0 || !/^[0-9]+$/.test(order.quantity)) {
+        err.quantity = "Số lượng phải là số nguyên dương";
+      }
+      // Validate unit price
+      if (!order.unitPrice) {
+        err.unitPrice = "Vui lòng nhập đơn giá";
+      } else if (isNaN(Number(order.unitPrice)) || Number(order.unitPrice) <= 0 || !/^[0-9]+$/.test(order.unitPrice)) {
+        err.unitPrice = "Đơn giá phải là số nguyên dương";
+      }
       if (!order.totalAmount) err.totalAmount = "Vui lòng nhập số tiền phải thu";
       return err;
     });
@@ -159,6 +178,7 @@ export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
     }));
     try {
       await createContractWithOrder({ contract, orderItems });
+      if (typeof onDebtAdded === "function") onDebtAdded();
       onOpenChange(false);
     } catch (err) {
       alert("Có lỗi khi thêm công nợ!");
@@ -348,7 +368,15 @@ export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
                       type="number"
                       placeholder="Nhập số lượng"
                       value={order.quantity}
-                      onChange={(e) => updateOrder(index, "quantity", e.target.value)}
+                      min={1}
+                      step={1}
+                      onChange={(e) => {
+                        // Chỉ cho phép số nguyên dương
+                        const val = e.target.value;
+                        if (/^\d*$/.test(val)) {
+                          updateOrder(index, "quantity", val);
+                        }
+                      }}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     {orderErrors[index]?.quantity && (
@@ -364,7 +392,15 @@ export function AddDebtModal({ isOpen, onOpenChange }: AddDebtModalProps) {
                       type="number"
                       placeholder="Nhập đơn giá"
                       value={order.unitPrice}
-                      onChange={(e) => updateOrder(index, "unitPrice", e.target.value)}
+                      min={1}
+                      step={1}
+                      onChange={(e) => {
+                        // Chỉ cho phép số nguyên dương
+                        const val = e.target.value;
+                        if (/^\d*$/.test(val)) {
+                          updateOrder(index, "unitPrice", val);
+                        }
+                      }}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     {orderErrors[index]?.unitPrice && (
