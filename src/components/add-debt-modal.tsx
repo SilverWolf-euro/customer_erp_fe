@@ -161,7 +161,7 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
       contractNumber: orders[0].contractNumber,
       customerId: selectedCustomer!.customerID,
       salesId: selectedCustomer!.saleID,
-      contractStatus,
+      statusContract: contractStatus,
       isDelete: 0
     };
     const orderItems = orders.map(o => ({
@@ -414,10 +414,10 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                     <input
                       id={`total-amount-${index}`}
                       type="number"
-                      placeholder="Nhập số tiền"
                       value={order.totalAmount}
-                      onChange={(e) => updateOrder(index, "totalAmount", e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      readOnly
+                      className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 focus:outline-none cursor-not-allowed"
+                      tabIndex={-1}
                     />
                     {orderErrors[index]?.totalAmount && (
                       <div className="text-red-600 text-xs mt-1">{orderErrors[index].totalAmount}</div>

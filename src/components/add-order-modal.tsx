@@ -38,6 +38,44 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Kiểm tra dữ liệu đầu vào
+    if (!form.contractNumber.trim()) {
+      alert("Vui lòng nhập số hợp đồng.");
+      return;
+    }
+    if (!form.productName.trim()) {
+      alert("Vui lòng nhập tên hàng.");
+      return;
+    }
+    if (!form.saleDate) {
+      alert("Vui lòng chọn ngày bán hàng.");
+      return;
+    }
+    if (!form.dueDate) {
+      alert("Vui lòng chọn ngày đến hạn.");
+      return;
+    }
+    // Kiểm tra ngày đến hạn phải lớn hơn ngày bán hàng
+    if (form.saleDate && form.dueDate) {
+      const sale = new Date(form.saleDate);
+      const due = new Date(form.dueDate);
+      if (due <= sale) {
+        alert("Ngày đến hạn phải lớn hơn ngày bán hàng.");
+        return;
+      }
+    }
+    if (!form.quantity || Number(form.quantity) <= 0) {
+      alert("Số lượng phải lớn hơn 0.");
+      return;
+    }
+    if (!form.unitPrice || Number(form.unitPrice) <= 0) {
+      alert("Đơn giá phải lớn hơn 0.");
+      return;
+    }
+    if (!form.totalAmount || Number(form.totalAmount) <= 0) {
+      alert("Số tiền phải thu phải lớn hơn 0.");
+      return;
+    }
     setLoading(true);
     try {
       const orderData = {
@@ -56,8 +94,16 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
       await insertOrder(orderData);
       if (onOrderAdded) onOrderAdded();
       onOpenChange(false);
-    } catch {
-      alert("Có lỗi khi thêm đơn hàng!");
+    } catch (error: any) {
+      let message = "Có lỗi khi thêm đơn hàng!";
+      if (error?.response?.data?.message) {
+        message = error.response.data.message;
+      } else if (error?.response?.data?.error) {
+        message = error.response.data.error;
+      } else if (error?.message) {
+        message = error.message;
+      }
+      alert(message);
     } finally {
       setLoading(false);
     }
@@ -67,7 +113,13 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+      <div
+        className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative"
+        style={{
+          maxHeight: '90vh',
+          overflowY: 'auto',
+        }}
+      >
         <button
           className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
           onClick={() => onOpenChange(false)}
@@ -164,10 +216,9 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
               type="number"
               name="totalAmount"
               value={form.totalAmount}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400"
-              required
-              placeholder="Nhập số tiền"
+              readOnly
+              className="w-full border rounded px-3 py-2 bg-gray-100 focus:outline-none focus:ring focus:border-blue-400 cursor-not-allowed"
+              tabIndex={-1}
             />
           </div>
           
