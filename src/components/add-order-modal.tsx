@@ -1,6 +1,22 @@
 import React, { useState } from "react";
 import { insertOrder } from "../services/orderService";
 
+type OrderForm = {
+  contractNumber: string;
+  productName: string;
+  saleDate: string;
+  totalAmount: string;
+  quantity: string;
+  unitPrice: string;
+  currency: string;
+  dueDate: string;
+  paidAmount: string;
+  paidDate: string;
+  priceFinalizationDate: string;
+  priceFinalizationStatus: boolean;
+};
+
+
 interface AddOrderModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -9,22 +25,42 @@ interface AddOrderModalProps {
 }
 
 export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }: AddOrderModalProps) {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<OrderForm>({
     contractNumber: "",
     productName: "",
     saleDate: "",
     totalAmount: "",
     quantity: "",
     unitPrice: "",
+    currency: "VND",
     dueDate: "",
     paidAmount: "",
     paidDate: "",
+    priceFinalizationDate: "",
+    priceFinalizationStatus: false,
   });
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    let newForm = { ...form, [name]: value };
+    let newForm: OrderForm = { ...form };
+    if (name === 'priceFinalizationStatus') {
+      newForm.priceFinalizationStatus = value === 'closed';
+    } else if (
+      name === 'contractNumber' ||
+      name === 'productName' ||
+      name === 'saleDate' ||
+      name === 'totalAmount' ||
+      name === 'quantity' ||
+      name === 'unitPrice' ||
+      name === 'currency' ||
+      name === 'dueDate' ||
+      name === 'paidAmount' ||
+      name === 'paidDate' ||
+      name === 'priceFinalizationDate'
+    ) {
+      newForm[name] = value;
+    }
     // Tự động tính số tiền phải thu nếu thay đổi số lượng hoặc đơn giá
     if (name === 'quantity' || name === 'unitPrice') {
       const quantity = name === 'quantity' ? Number(value) : Number(newForm.quantity);
@@ -85,6 +121,9 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
         salesDate: form.saleDate ? new Date(form.saleDate).toISOString() : null,
         quantity: Number(form.quantity),
         unitPrice: Number(form.unitPrice),
+        currency: form.currency === 'VND' ? 1 : 0,
+        priceFinalizationDate: form.priceFinalizationDate,
+        priceFinalizationStatus: form.priceFinalizationStatus,
         amountReceivable: Number(form.totalAmount),
         dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
         amountCollected: Number(form.paidAmount || 0),
@@ -199,17 +238,52 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
             />
           </div>
           <div>
-            <label className="block mb-1 font-medium">Đơn giá (VNĐ) *</label>
-            <input
-              type="number"
-              name="unitPrice"
-              value={form.unitPrice}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400"
-              required
-              placeholder="Nhập đơn giá"
-            />
+            <label className="block mb-1 font-medium">Đơn giá, mệnh giá *</label>
+            <div className="flex gap-2 items-center">
+              <input
+                type="number"
+                name="unitPrice"
+                value={form.unitPrice}
+                onChange={handleChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400"
+                required
+                placeholder="Nhập đơn giá"
+              />
+              <select
+                name="currency"
+                value={form.currency}
+                onChange={handleChange}
+                className="min-w-[90px] max-w-[120px] border rounded px-2 py-2 focus:outline-none focus:ring focus:border-blue-400"
+              >
+                <option value="VND">VNĐ</option>
+                <option value="USD">Đô la Mỹ</option>
+              </select>
+            </div>
           </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="block mb-1 font-medium">Ngày chốt giá</label>
+                        <input
+                          type="date"
+                          name="priceFinalizationDate"
+                          value={form.priceFinalizationDate}
+                          onChange={handleChange}
+                          className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400"
+                        />
+                      </div>
+                      <div className="flex flex-col justify-end w-1/3 min-w-[90px] max-w-[120px]">
+                        <label className="block mb-1 font-medium">TT chốt giá</label>
+                        <select
+                          name="priceFinalizationStatus"
+                          value={form.priceFinalizationStatus ? 'closed' : 'not_closed'}
+                          onChange={handleChange}
+                          className="border rounded px-2 py-2 focus:outline-none focus:ring focus:border-blue-400"
+                        >
+                          <option value="not_closed">Chưa chốt</option>
+                          <option value="closed">Đã chốt</option>
+                        </select>
+                      </div>
+                    </div>
           <div>
             <label className="block mb-1 font-medium">Số tiền phải thu (VNĐ) *</label>
             <input

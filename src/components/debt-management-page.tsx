@@ -7,6 +7,39 @@ import { AddOrderModal } from "./add-order-modal.tsx"
 import { UpdateDebtModal } from "./update-debt-modal.tsx"
 import { DebtDetailModal } from "./debt-detail-modal.tsx"
 import { fetchCustomerDebts } from "../services/customerDebtService.js"
+import React from "react"
+import { addPriceFinalizationDate } from "../services/priceFinalizationService.js"
+// ...existing code...
+import { Dialog } from "@headlessui/react"
+// Modal chọn ngày chốt giá
+function PriceFinalizationModal({ open, onClose, onSave, order }: { open: boolean, onClose: () => void, onSave: (date: string) => void, order: Order | null }) {
+  const [date, setDate] = useState("");
+  if (!order) return null;
+  return (
+    <Dialog open={open} onClose={onClose} className="fixed z-50 inset-0 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+      <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-sm mx-auto">
+        <Dialog.Title className="text-lg font-semibold mb-4">Chọn ngày chốt giá cho đơn hàng {order.contractNumber}</Dialog.Title>
+        <input
+          type="date"
+          className="border border-gray-300 rounded px-3 py-2 w-full mb-4"
+          value={date}
+          onChange={e => setDate(e.target.value)}
+        />
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">Hủy</button>
+          <button
+            onClick={() => { if (date) onSave(date) }}
+            className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+            disabled={!date}
+          >Lưu</button>
+        </div>
+      </div>
+    </Dialog>
+  )
+}
+
+
 
 interface PaymentHistory {
   date: string
@@ -28,6 +61,8 @@ interface Order {
   overdueDay?: number
   quantity: number
   unitPrice: number
+  priceFinalizationDate?: string
+  priceFinalizationStatus?: boolean
 }
 
 interface Customer {
@@ -44,10 +79,12 @@ interface Customer {
 
 
 export function DebtManagementPage() {
+  const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
+  const [selectedOrderForPrice, setSelectedOrderForPrice] = useState<Order | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([])
   const [isAddOrderModalOpen, setIsAddOrderModalOpen] = useState(false)
   const [selectedContractID, setSelectedContractID] = useState<string | null>(null)
-  const [totalCount, setTotalCount] = useState(0)
+
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("all")
   const [fromDate, setFromDate] = useState("");
@@ -97,14 +134,14 @@ export function DebtManagementPage() {
             })),
           }))
         );
-        setTotalCount(res.data.object.totalCount);
+        // setTotalCount(res.data.object.totalCount); // Đã loại bỏ
       } else {
         setCustomers([]);
-        setTotalCount(0);
+        // setTotalCount(0); // Đã loại bỏ
       }
     } catch (e) {
       setCustomers([])
-      setTotalCount(0)
+      // setTotalCount(0) // Đã loại bỏ
     }
   }
 
@@ -312,7 +349,7 @@ export function DebtManagementPage() {
                 if (relevantOrders.length === 0) return null
 
                 const isExpanded = expandedCustomers.has(customer.id)
-                const isPaidTab = activeTab === "paid"
+
 
                 return (
                   <div
@@ -380,6 +417,8 @@ export function DebtManagementPage() {
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Đã thu</th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Còn phải thu</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-600">Ngày đến hạn</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-600">Ngày chốt giá</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-600">Trạng thái chốt giá</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-600">Trạng thái</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-600">Thao tác</th>
                               </tr>
@@ -422,7 +461,6 @@ export function DebtManagementPage() {
                                         Quá hạn {(() => {
                                           const due = new Date(order.dueDate)
                                           const now = new Date()
-                                          // Đặt giờ về 0 để tính đúng số ngày
                                           due.setHours(0,0,0,0)
                                           now.setHours(0,0,0,0)
                                           const diff = Math.floor((now.getTime() - due.getTime()) / (1000*60*60*24))
@@ -431,6 +469,47 @@ export function DebtManagementPage() {
                                       </div>
                                     )}
                                   </td>
+                                  <td className="px-4 py-4 text-sm text-black">{order.priceFinalizationDate ? order.priceFinalizationDate : '-'}</td>
+                                  <td className="px-4 py-4 text-sm text-black">
+                                    {order.priceFinalizationStatus ? (
+                                      <span className="text-green-600">Đã chốt giá</span>
+                                    ) : (
+                                      <>
+                                        <span className="text-red-600">Chưa chốt giá</span>
+                                        <button
+                                          className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                                          onClick={e => {
+                                            e.stopPropagation();
+                                            setSelectedOrderForPrice(order);
+                                            setIsPriceModalOpen(true);
+                                          }}
+                                        >Chọn ngày</button>
+                                      </>
+                                    )}
+                                  </td>
+                                        <PriceFinalizationModal
+                                          open={isPriceModalOpen}
+                                          onClose={() => setIsPriceModalOpen(false)}
+                                          order={selectedOrderForPrice}
+                                          onSave={async (date) => {
+                                            if (!selectedOrderForPrice || !date) return;
+                                            // Nếu backend .NET, cần gửi đúng định dạng ISO 8601: yyyy-MM-ddTHH:mm:ssZ
+                                            // Nếu chỉ gửi yyyy-MM-dd bị lỗi 0001-01-01 thì cần thêm giờ và timezone
+                                            let finalDate = date;
+                                            if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+                                              // Chuyển sang ISO string UTC
+                                              finalDate = new Date(date + 'T00:00:00Z').toISOString();
+                                            }
+                                            await addPriceFinalizationDate({
+                                              orderID: selectedOrderForPrice.id,
+                                              priceFinalizationDate: finalDate,
+                                              priceFinalizationStatus: 1
+                                            });
+                                            setIsPriceModalOpen(false);
+                                            setSelectedOrderForPrice(null);
+                                            fetchData();
+                                          }}
+                                        />
                                   <td className="px-4 py-4">{getStatusBadge(order.status)}</td>
                                   <td className="px-4 py-4">
                                     <div className="flex gap-2">
