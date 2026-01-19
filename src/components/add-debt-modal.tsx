@@ -1,8 +1,24 @@
-"use client"
 
+"use client"
 import { useState, useEffect } from "react"
 import { fetchAllCustomers, createContractWithOrder } from "../services/contractService.js"
 import { Plus, X } from "lucide-react"
+
+// Format currency helper
+function formatCurrency(amount: string | number, currency: 'VND' | 'USD' = 'VND') {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(num)) return '';
+  let locale = currency === 'USD' ? 'en-US' : 'vi-VN';
+  let cur = currency === 'USD' ? 'USD' : 'VND';
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: cur,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(num);
+}
+
+
 
 interface Order {
   contractNumber: string
@@ -165,6 +181,7 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
         err.unitPrice = "Đơn giá phải là số nguyên dương";
       }
       if (!order.totalAmount) err.totalAmount = "Vui lòng nhập số tiền phải thu";
+        if (!order.priceFinalizationDate) err.priceFinalizationDate = "Vui lòng nhập ngày chốt giá";
       return err;
     });
     setOrderErrors(newOrderErrors);
@@ -184,7 +201,7 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
       salesDate: o.saleDate,
       quantity: Number(o.quantity || 0),
       unitPrice: Number(o.unitPrice || 0),
-      currency: o.currency === 'VND' ? 1 : 0,
+      currency: o.currency === 'USD' ? 0 : 1,
       priceFinalizationDate: o.priceFinalizationDate || "",
       priceFinalizationStatus: !!o.priceFinalizationStatus,
       amountReceivable: Number(o.totalAmount || 0),
@@ -193,6 +210,19 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
       status: 0,
       isDelete: 0
     }));
+    // Format currency helper
+    function formatCurrency(amount: string | number, currency: 'VND' | 'USD' = 'VND') {
+      const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+      if (isNaN(num)) return '';
+      let locale = currency === 'USD' ? 'en-US' : 'vi-VN';
+      let cur = currency === 'USD' ? 'USD' : 'VND';
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: cur,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      }).format(num);
+    }
     try {
       await createContractWithOrder({ contract, orderItems });
       // Reset form data only after successful save
@@ -293,20 +323,6 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                       className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500 cursor-not-allowed"
                     />
                   </div>
-                  {/* <div className="space-y-2">
-                    <label htmlFor="support-person" className="block text-sm font-medium text-gray-700">
-                      Hỗ trợ phụ trách
-                    </label>
-                    <input
-                      id="support-person"
-                      type="text"
-                      placeholder="Auto-fill sau khi chọn khách hàng"
-                      value={supportPerson}
-                      onChange={(e) => setSupportPerson(e.target.value)}
-                      disabled
-                      className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500 cursor-not-allowed"
-                    />
-                  </div> */}
               </div>
             </div>
 
@@ -471,6 +487,9 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                         }}
                         className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
+                      <div className="text-xs text-gray-500 min-w-[70px] text-right">
+                        {formatCurrency(order.unitPrice, order.currency as any)}
+                      </div>
                       <select
                         value={order.currency || 'VND'}
                         onChange={e => updateOrder(index, 'currency', e.target.value)}
@@ -496,6 +515,9 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                       className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 focus:outline-none cursor-not-allowed"
                       tabIndex={-1}
                     />
+                    <div className="text-xs text-gray-500 min-w-[70px] text-right">
+                      {formatCurrency(order.totalAmount, order.currency as any)}
+                    </div>
                     {orderErrors[index]?.totalAmount && (
                       <div className="text-red-600 text-xs mt-1">{orderErrors[index].totalAmount}</div>
                     )}

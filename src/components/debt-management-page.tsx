@@ -61,6 +61,7 @@ interface Order {
   overdueDay?: number
   quantity: number
   unitPrice: number
+  currency?: 'VND' | 'USD';
   priceFinalizationDate?: string
   priceFinalizationStatus?: boolean
 }
@@ -130,6 +131,7 @@ export function DebtManagementPage() {
               contractNumber: o.orderNumber, // map orderNumber to contractNumber for FE
               quantity: o.quantity, // map quantity to Số lượng
               unitPrice: o.unitPrice, // map unitPrice to Đơn giá
+              currency: o.currency === 0 ? 'USD' : 'VND', // map currency: 0 -> USD, 1/undefined -> VND
               // status and overdueDay are now provided by API
             })),
           }))
@@ -187,10 +189,14 @@ export function DebtManagementPage() {
     return customers.filter((c) => c.orders.some((o) => o.status === status)).length
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN", {
+  const formatCurrency = (amount: number, currency: 'VND' | 'USD' = 'VND') => {
+    let locale = currency === 'USD' ? 'en-US' : 'vi-VN';
+    let cur = currency === 'USD' ? 'USD' : 'VND';
+    return new Intl.NumberFormat(locale, {
       style: "currency",
-      currency: "VND",
+      currency: cur,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
     }).format(amount)
   }
 
@@ -375,7 +381,7 @@ export function DebtManagementPage() {
                         </div>
                         <div>
                           <div className="text-xs text-gray-500 mb-1">Tổng công nợ</div>
-                          <div className="text-sm font-semibold text-red-600">{formatCurrency(customer.totalDebt)}</div>
+                          <div className="text-sm font-semibold text-red-600">{formatCurrency(customer.totalDebt, (customer.orders[0]?.currency || 'VND'))}</div>
                         </div>
                         <div className="relative">
                           <div className="text-xs text-gray-500 mb-1">Số đơn hàng</div>
@@ -430,11 +436,11 @@ export function DebtManagementPage() {
                                   <td className="px-4 py-4 text-sm text-black">{order.productName}</td>
                                   <td className="px-4 py-4 text-sm text-black">{order.saleDate}</td>
                                   <td className="px-4 py-4 text-sm text-right text-black">{order.quantity ?? '-'}</td>
-                                  <td className="px-4 py-4 text-sm text-right text-black">{order.unitPrice ? formatCurrency(order.unitPrice) : '-'}</td>
-                                  <td className="px-4 py-4 text-sm text-right text-black">{formatCurrency(order.totalAmount)}</td>
+                                  <td className="px-4 py-4 text-sm text-right text-black">{order.unitPrice ? formatCurrency(order.unitPrice, order.currency === 'USD' ? 'USD' : 'VND') : '-'}</td>
+                                  <td className="px-4 py-4 text-sm text-right text-black">{formatCurrency(order.totalAmount, order.currency === 'USD' ? 'USD' : 'VND')}</td>
                                   <td className="px-4 py-4 text-sm text-right">
                                     <div className="space-y-1">
-                                      <div className="text-black">{formatCurrency(order.paid)}</div>
+                                      <div className="text-black">{formatCurrency(order.paid, order.currency === 'USD' ? 'USD' : 'VND')}</div>
                                       {order.paidHistory.length > 0 && (
                                         <div className="text-xs text-gray-500">
                                           {order.paidHistory[order.paidHistory.length - 1].date}
@@ -453,7 +459,7 @@ export function DebtManagementPage() {
                                       )}
                                     </div>
                                   </td>
-                                  <td className="px-4 py-4 text-sm text-right font-semibold text-red-600">{formatCurrency(order.remaining)}</td>
+                                  <td className="px-4 py-4 text-sm text-right font-semibold text-red-600">{formatCurrency(order.remaining, order.currency === 'USD' ? 'USD' : 'VND')}</td>
                                   <td className="px-4 py-4 text-sm text-black">
                                     {order.dueDate}
                                     {order.status === "overdue" && order.dueDate && (

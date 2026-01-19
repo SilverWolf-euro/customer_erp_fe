@@ -88,10 +88,14 @@ export function UpdateDebtModal({ open, onOpenChange, order, customer, onPayment
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount)
+    const currency = (order as any).currency === 'USD' ? 'USD' : 'VND';
+    const locale = currency === 'USD' ? 'en-US' : 'vi-VN';
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(amount);
   }
 
   const handleUpdate = async () => {
@@ -205,17 +209,14 @@ export function UpdateDebtModal({ open, onOpenChange, order, customer, onPayment
               </div>
               <div className="space-y-2">
                 <label htmlFor="total-amount" className="block text-sm font-medium text-gray-700">
-                  Số tiền phải thu (VNĐ)
+                  Số tiền phải thu ({(order as any).currency === 'USD' ? 'USD' : 'VNĐ'})
                 </label>
                 <input
                   id="total-amount"
                   type="number"
                   value={totalAmount}
-                  onChange={(e) => setTotalAmount(e.target.value)}
-                  disabled={hasExistingPayments}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    hasExistingPayments ? "bg-gray-100 text-gray-500 cursor-not-allowed" : "bg-white"
-                  }`}
+                  disabled
+                  className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500 cursor-not-allowed"
                 />
                 {hasExistingPayments && (
                   <p className="text-xs text-gray-500">Không thể sửa vì đã có khoản thanh toán</p>
@@ -232,7 +233,7 @@ export function UpdateDebtModal({ open, onOpenChange, order, customer, onPayment
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="unit-price" className="block text-sm font-medium text-gray-700">Đơn giá (VNĐ)</label>
+                <label htmlFor="unit-price" className="block text-sm font-medium text-gray-700">Đơn giá ({(order as any).currency === 'USD' ? 'USD' : 'VNĐ'})</label>
                 <input
                   id="unit-price"
                   type="number"
@@ -299,7 +300,7 @@ export function UpdateDebtModal({ open, onOpenChange, order, customer, onPayment
                     </div>
                     <div className="space-y-2">
                       <label htmlFor={`payment-amount-${index}`} className="block text-xs font-medium text-gray-700">
-                        Số tiền đã thu (VNĐ)
+                        Số tiền đã thu ({(order as any).currency === 'USD' ? 'USD' : 'VNĐ'})
                       </label>
                       <input
                         id={`payment-amount-${index}`}

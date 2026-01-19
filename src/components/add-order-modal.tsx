@@ -1,6 +1,21 @@
 import React, { useState } from "react";
 import { insertOrder } from "../services/orderService";
 
+// Format currency helper
+function formatCurrency(amount: string | number, currency: 'VND' | 'USD' = 'VND') {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(num)) return '';
+  let locale = currency === 'USD' ? 'en-US' : 'vi-VN';
+  let cur = currency === 'USD' ? 'USD' : 'VND';
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: cur,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(num);
+}
+
+
 type OrderForm = {
   contractNumber: string;
   productName: string;
@@ -112,6 +127,10 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
       alert("Số tiền phải thu phải lớn hơn 0.");
       return;
     }
+      if (!form.priceFinalizationDate) {
+        alert("Vui lòng nhập ngày chốt giá.");
+        return;
+      }
     setLoading(true);
     try {
       const orderData = {
@@ -259,6 +278,9 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
                 <option value="USD">Đô la Mỹ</option>
               </select>
             </div>
+            <div className="text-xs text-gray-500 min-w-[70px] text-right">
+              {formatCurrency(form.unitPrice, form.currency as any)}
+            </div>
           </div>
                     <div className="flex gap-2">
                       <div className="flex-1">
@@ -285,7 +307,7 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
                       </div>
                     </div>
           <div>
-            <label className="block mb-1 font-medium">Số tiền phải thu (VNĐ) *</label>
+            <label className="block mb-1 font-medium">Số tiền phải thu  *</label>
             <input
               type="number"
               name="totalAmount"
@@ -294,6 +316,9 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
               className="w-full border rounded px-3 py-2 bg-gray-100 focus:outline-none focus:ring focus:border-blue-400 cursor-not-allowed"
               tabIndex={-1}
             />
+            <div className="text-xs text-gray-500 min-w-[70px] text-right">
+              {formatCurrency(form.totalAmount, form.currency as any)}
+            </div>
           </div>
           
           <div className="flex justify-end">

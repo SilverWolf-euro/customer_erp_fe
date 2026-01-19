@@ -32,10 +32,14 @@ interface DebtDetailModalProps {
 
 export function DebtDetailModal({ open, onOpenChange, order, customer }: DebtDetailModalProps) {
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount)
+    const currency = (order as any).currency === 'USD' ? 'USD' : 'VND';
+    const locale = currency === 'USD' ? 'en-US' : 'vi-VN';
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(amount);
   }
 
   if (!open) return null
@@ -91,7 +95,7 @@ export function DebtDetailModal({ open, onOpenChange, order, customer }: DebtDet
                 <div className="font-medium text-gray-900">{order.saleDate}</div>
               </div>
               <div className="space-y-1">
-                <label className="block text-xs text-gray-500">Số tiền phải thu</label>
+                <label className="block text-xs text-gray-500">Số tiền phải thu ({(order as any).currency === 'USD' ? 'USD' : 'VNĐ'})</label>
                 <div className="font-medium text-gray-900">{formatCurrency(order.totalAmount)}</div>
               </div>
               <div className="space-y-1">
@@ -99,7 +103,7 @@ export function DebtDetailModal({ open, onOpenChange, order, customer }: DebtDet
                 <div className="font-medium text-gray-900">{order.quantity}</div>
               </div>
               <div className="space-y-1">
-                <label className="block text-xs text-gray-500">Đơn giá</label>
+                <label className="block text-xs text-gray-500">Đơn giá ({(order as any).currency === 'USD' ? 'USD' : 'VNĐ'})</label>
                 <div className="font-medium text-gray-900">{formatCurrency(order.unitPrice)}</div>
               </div>
               <div className="space-y-1">
