@@ -110,6 +110,18 @@ export function DebtDetailModal({ open, onOpenChange, order, customer }: DebtDet
                 <label className="block text-xs text-gray-500">Ngày đến hạn</label>
                 <div className="font-medium text-gray-900">{order.dueDate}</div>
               </div>
+              <div className="space-y-1">
+                <label className="block text-xs text-gray-500">Ngày chốt giá</label>
+                <div className="font-medium text-gray-900">{(order as any).priceFinalizationDate || '-'}</div>
+              </div>
+              <div className="space-y-1">
+                <label className="block text-xs text-gray-500">Trạng thái chốt giá</label>
+                <div className="font-medium text-gray-900">
+                  {(order as any).priceFinalizationStatus
+                    ? <span className="text-green-600">Đã chốt giá</span>
+                    : <span className="text-red-600">Chưa chốt giá</span>}
+                </div>
+              </div>
               <div className="space-y-1 col-span-2">
                 <label className="block text-xs text-gray-500">Còn phải thu</label>
                 <div className="text-2xl font-bold text-red-600">{formatCurrency(order.remaining)}</div>

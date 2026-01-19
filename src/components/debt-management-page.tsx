@@ -13,26 +13,27 @@ import { addPriceFinalizationDate } from "../services/priceFinalizationService.j
 import { Dialog } from "@headlessui/react"
 // Modal chọn ngày chốt giá
 function PriceFinalizationModal({ open, onClose, onSave, order }: { open: boolean, onClose: () => void, onSave: (date: string) => void, order: Order | null }) {
-  const [date, setDate] = useState("");
   if (!order) return null;
   return (
     <Dialog open={open} onClose={onClose} className="fixed z-50 inset-0 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-sm mx-auto">
-        <Dialog.Title className="text-lg font-semibold mb-4">Chọn ngày chốt giá cho đơn hàng {order.contractNumber}</Dialog.Title>
-        <input
-          type="date"
-          className="border border-gray-300 rounded px-3 py-2 w-full mb-4"
-          value={date}
-          onChange={e => setDate(e.target.value)}
-        />
-        <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">Hủy</button>
+        <Dialog.Title className="text-lg font-semibold mb-4">Chốt giá cho đơn hàng {order.contractNumber}</Dialog.Title>
+        <div className="flex flex-col items-center justify-center mb-4">
           <button
-            onClick={() => { if (date) onSave(date) }}
-            className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-            disabled={!date}
-          >Lưu</button>
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            onClick={() => {
+              const today = new Date();
+              const yyyy = today.getFullYear();
+              const mm = String(today.getMonth() + 1).padStart(2, '0');
+              const dd = String(today.getDate()).padStart(2, '0');
+              const dateStr = `${yyyy}-${mm}-${dd}`;
+              onSave(dateStr);
+            }}
+          >Chốt giá hôm nay</button>
+        </div>
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">Đóng</button>
         </div>
       </div>
     </Dialog>
@@ -423,7 +424,6 @@ export function DebtManagementPage() {
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Đã thu</th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Còn phải thu</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-600">Ngày đến hạn</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-600">Ngày chốt giá</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-600">Trạng thái chốt giá</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-600">Trạng thái</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-600">Thao tác</th>
@@ -475,21 +475,23 @@ export function DebtManagementPage() {
                                       </div>
                                     )}
                                   </td>
-                                  <td className="px-4 py-4 text-sm text-black">{order.priceFinalizationDate ? order.priceFinalizationDate : '-'}</td>
                                   <td className="px-4 py-4 text-sm text-black">
                                     {order.priceFinalizationStatus ? (
-                                      <span className="text-green-600">Đã chốt giá</span>
+                                      <span className="text-green-600">Đã chốt giá{order.priceFinalizationDate ? ` (${order.priceFinalizationDate})` : ''}</span>
                                     ) : (
                                       <>
                                         <span className="text-red-600">Chưa chốt giá</span>
+                                        {order.priceFinalizationDate && (
+                                          <span className="ml-2 text-gray-600">({order.priceFinalizationDate})</span>
+                                        )}
                                         <button
-                                          className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                                          className="ml-2 px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
                                           onClick={e => {
                                             e.stopPropagation();
                                             setSelectedOrderForPrice(order);
                                             setIsPriceModalOpen(true);
                                           }}
-                                        >Chọn ngày</button>
+                                        >Chốt giá</button>
                                       </>
                                     )}
                                   </td>
