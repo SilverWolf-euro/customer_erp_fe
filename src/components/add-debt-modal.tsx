@@ -414,19 +414,6 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                       </div>
                     )}
                   </div>
-                  {/* Ngày chốt giá */}
-                  <div className="space-y-2">
-                    <label htmlFor={`closing-date-${index}`} className="block text-sm font-medium text-gray-700">
-                      Ngày chốt giá
-                    </label>
-                    <input
-                      id={`closing-date-${index}`}
-                      type="date"
-                      value={order.priceFinalizationDate || ""}
-                      onChange={e => updateOrder(index, "priceFinalizationDate", e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
                   {/* Trạng thái chốt giá (select nhỏ) */}
                   <div className="space-y-2 ">
                     <label htmlFor={`is-closed-${index}`} className="block text-sm font-medium text-gray-700">
@@ -442,6 +429,23 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                       <option value="closed">Đã chốt</option>
                     </select>
                   </div>
+                  {/* Ngày chốt giá */}
+                  <div className="space-y-2">
+                    <label htmlFor={`closing-date-${index}`} className="block text-sm font-medium text-gray-700">
+                      Ngày chốt giá <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      id={`closing-date-${index}`}
+                      type="date"
+                      value={order.priceFinalizationDate || ""}
+                      onChange={e => updateOrder(index, "priceFinalizationDate", e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    {orderErrors[index]?.priceFinalizationDate && (
+                      <div className="text-red-600 text-xs mt-1">{orderErrors[index].priceFinalizationDate}</div>
+                    )}
+                  </div>
+                  
                   <div className="space-y-2">
                     <label htmlFor={`quantity-${index}`} className="block text-sm font-medium text-gray-700">
                       Số lượng <span className="text-red-600">*</span>
@@ -473,19 +477,21 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                     <div className="flex gap-2 items-center">
                       <input
                         id={`unit-price-${index}`}
-                        type="number"
+                        type="text"
                         placeholder="Nhập đơn giá"
-                        value={order.unitPrice}
+                        value={order.currency === 'USD' && order.unitPrice ? Number(order.unitPrice).toLocaleString('en-US') : order.currency === 'VND' && order.unitPrice ? Number(order.unitPrice).toLocaleString('vi-VN') : order.unitPrice}
                         min={1}
                         step={1}
                         onChange={(e) => {
-                          // Chỉ cho phép số nguyên dương
-                          const val = e.target.value;
-                          if (/^\d*$/.test(val)) {
-                            updateOrder(index, "unitPrice", val);
+                          let val = e.target.value.replace(/[^\d]/g, '');
+                          if (order.currency === 'VND' && val) {
+                            val = String(Number(val));
                           }
+                          updateOrder(index, "unitPrice", val);
                         }}
                         className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        inputMode="numeric"
+                        autoComplete="off"
                       />
                       <div className="text-xs text-gray-500 min-w-[70px] text-right">
                         {formatCurrency(order.unitPrice, order.currency as any)}
@@ -509,11 +515,13 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                     </label>
                     <input
                       id={`total-amount-${index}`}
-                      type="number"
-                      value={order.totalAmount}
+                      type="text"
+                      value={order.currency === 'USD' && order.totalAmount ? Number(order.totalAmount).toLocaleString('en-US') : order.currency === 'VND' && order.totalAmount ? Number(order.totalAmount).toLocaleString('vi-VN') : order.totalAmount}
                       readOnly
                       className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 focus:outline-none cursor-not-allowed"
                       tabIndex={-1}
+                      inputMode="numeric"
+                      autoComplete="off"
                     />
                     <div className="text-xs text-gray-500 min-w-[70px] text-right">
                       {formatCurrency(order.totalAmount, order.currency as any)}
