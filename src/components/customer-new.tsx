@@ -9,6 +9,8 @@ interface Customer {
 	CustomerName: string;
 	SaleName: string;
 	saleID?: string;
+	supportName?: string;
+	supportID?: string;
 	Address: string;
 	TaxCode: string;
 }
@@ -17,6 +19,8 @@ const initialForm: Customer = {
 	CustomerName: '',
 	SaleName: '',
 	saleID: '',
+	supportName: '',
+	supportID: '',
 	Address: '',
 	TaxCode: '',
 };
@@ -46,8 +50,9 @@ const CustomerNew: React.FC = () => {
 				const mapped = res.data.object.map((c: any) => ({
 					CustomerID: c.customerID,
 					CustomerName: c.customerName,
-					SaleName: c.fullName || '',
+					SaleName: c.saleName || '',
 					saleID: c.saleID || '',
+					supportName: c.supportName || '',
 					Address: c.address || '',
 					TaxCode: c.taxCode || ''
 				}));
@@ -75,6 +80,7 @@ const CustomerNew: React.FC = () => {
 			try {
 				const payload = {
 					saleID: form.saleID,
+					supportID: form.supportID,
 					customerName: form.CustomerName,
 					taxCode: form.TaxCode,
 					address: form.Address,
@@ -87,8 +93,9 @@ const CustomerNew: React.FC = () => {
 						const mapped = res.data.object.map((c: any) => ({
 							CustomerID: c.customerID,
 							CustomerName: c.customerName,
-							SaleName: c.fullName || '',
+							SaleName: c.saleName || '',
 							saleID: c.saleID || '',
+							supportName: c.supportName || '',
 							Address: c.address || '',
 							TaxCode: c.taxCode || ''
 						}));
@@ -154,6 +161,7 @@ const CustomerNew: React.FC = () => {
 									<th className="py-2 px-4 border-b border-l first:rounded-tl-lg last:rounded-tr-lg border-gray-200">#</th>
 									<th className="py-2 px-4 border-b border-l border-gray-200">Tên khách hàng</th>
 									<th className="py-2 px-4 border-b border-l border-gray-200">Tên Sale</th>
+									<th className="py-2 px-4 border-b border-l border-gray-200">Tên Hỗ trợ</th>
 									<th className="py-2 px-4 border-b border-l border-gray-200">Địa chỉ</th>
 									<th className="py-2 px-4 border-b border-l border-r border-gray-200">Mã số thuế</th>
 								</tr>
@@ -164,6 +172,7 @@ const CustomerNew: React.FC = () => {
 										<td className="py-2 px-4 border-b border-l border-gray-200 text-center">{idx + 1}</td>
 										<td className="py-2 px-4 border-b border-l border-gray-200">{c.CustomerName}</td>
 										<td className="py-2 px-4 border-b border-l border-gray-200">{c.SaleName}</td>
+										<td className="py-2 px-4 border-b border-l border-gray-200">{c.supportName}</td>
 										<td className="py-2 px-4 border-b border-l border-gray-200">{c.Address}</td>
 										<td className="py-2 px-4 border-b border-l border-r border-gray-200">{c.TaxCode}</td>
 									</tr>
@@ -217,6 +226,21 @@ const CustomerNew: React.FC = () => {
 																))}
 															</select>
 														</div>
+							<div>
+								<label className="block mb-1 font-medium">Tên phụ trách</label>
+								<select
+									name="supportID"
+									value={form.supportID}
+									onChange={handleChange}
+									className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400"
+									required
+								>
+									<option value="">Chọn người phụ trách</option>
+									{sales.map(s => (
+										<option key={s.userID} value={s.userID}>{s.fullName}</option>
+									))}
+								</select>
+							</div>
 							<div>
 											<div>
 												<label className="block mb-1 font-medium">Địa chỉ</label>
