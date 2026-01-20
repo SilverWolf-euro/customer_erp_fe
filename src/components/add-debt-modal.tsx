@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
+import Select from "react-select"
 import { fetchAllCustomers, createContractWithOrder } from "../services/contractService.js"
 import { Plus, X } from "lucide-react"
 
@@ -79,13 +80,17 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
 
 
 
-    // Khi chọn customer, tự động fill sale
-    const handleSelectCustomer = (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const id = e.target.value
-      const found = customers.find(c => c.customerID === id)
-      setSelectedCustomer(found || null)
-      setCustomerName(found?.customerName || "")
-      setSalesPerson(found?.fullName || "")
+    // Khi chọn customer, tự động fill sale (dùng react-select)
+    const handleSelectCustomer = (option: any) => {
+      if (!option) {
+        setSelectedCustomer(null);
+        setCustomerName("");
+        setSalesPerson("");
+        return;
+      }
+      setSelectedCustomer(option);
+      setCustomerName(option.customerName || "");
+      setSalesPerson(option.fullName || "");
     }
   const [orders, setOrders] = useState<Order[]>([
     {
@@ -309,17 +314,31 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                   <label htmlFor="customer-name" className="block text-sm font-medium text-gray-700">
                     Tên khách hàng <span className="text-red-600">*</span>
                   </label>
-                  <select
+                  <Select
                     id="customer-name"
-                    value={selectedCustomer?.customerID || ""}
+                    classNamePrefix="react-select"
+                    placeholder="Chọn khách hàng..."
+                    isClearable
+                    value={selectedCustomer}
+                    getOptionLabel={(option) => option.customerName}
+                    getOptionValue={(option) => option.customerID}
                     onChange={handleSelectCustomer}
-                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Chọn khách hàng</option>
-                    {customers.map(c => (
-                      <option key={c.customerID} value={c.customerID}>{c.customerName}</option>
-                    ))}
-                  </select>
+                    options={customers}
+                    className="w-full"
+                    styles={{
+                      control: (base) => ({ ...base, minHeight: '40px', borderRadius: '0.5rem', borderColor: '#d1d5db' }),
+                      menu: (base) => ({ ...base, zIndex: 9999 }),
+                    }}
+                    filterOption={(option, input) => {
+                      if (!input) return true;
+                      const normalize = (str: string) => str.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+                      const label = normalize(option.data.customerName);
+                      const id = normalize(option.data.customerID);
+                      const search = normalize(input);
+                      // Tách từ khoá thành các từ, chỉ cần 1 từ khớp là hiển thị
+                      return search.split(' ').some(word => label.includes(word) || id.includes(word));
+                    }}
+                  />
                   {customerError && (
                     <div className="text-red-600 text-xs mt-1">{customerError}</div>
                   )}
