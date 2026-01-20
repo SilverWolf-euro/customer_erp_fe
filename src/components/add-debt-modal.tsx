@@ -128,8 +128,24 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
 
   const updateOrder = (index: number, field: keyof Order, value: any) => {
     const newOrders = [...orders];
-    // Type guard để tránh lỗi TS
-    if (field === 'contractNumber' || field === 'productName' || field === 'saleDate' || field === 'totalAmount' || field === 'quantity' || field === 'unitPrice' || field === 'currency' || field === 'dueDate' || field === 'paidAmount' || field === 'paidDate' || field === 'priceFinalizationDate' || field === 'priceFinalizationStatus') {
+    // Nếu chọn TT chốt giá là "Đã chốt" thì tự động set ngày hiện tại và không cho chỉnh sửa hạn chốt giá
+    if (field === 'priceFinalizationStatus' && value === true) {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      const currentDate = `${yyyy}-${mm}-${dd}`;
+      newOrders[index].priceFinalizationDate = currentDate;
+      newOrders[index].priceFinalizationStatus = true;
+    } else if (field === 'priceFinalizationStatus' && value === false) {
+      newOrders[index].priceFinalizationStatus = false;
+      newOrders[index].priceFinalizationDate = '';
+    } else if (field === 'priceFinalizationDate') {
+      // Nếu đã chốt thì không cho chỉnh sửa hạn chốt giá
+      if (!newOrders[index].priceFinalizationStatus) {
+        newOrders[index].priceFinalizationDate = value;
+      }
+    } else if (field === 'contractNumber' || field === 'productName' || field === 'saleDate' || field === 'totalAmount' || field === 'quantity' || field === 'unitPrice' || field === 'currency' || field === 'dueDate' || field === 'paidAmount' || field === 'paidDate') {
       (newOrders[index] as any)[field] = value;
     }
     // Tự động tính số tiền phải thu nếu thay đổi số lượng hoặc đơn giá
@@ -438,7 +454,8 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                       type="date"
                       value={order.priceFinalizationDate || ""}
                       onChange={e => updateOrder(index, "priceFinalizationDate", e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-3 py-2 border rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${order.priceFinalizationStatus ? 'bg-gray-100 border-gray-300 cursor-not-allowed' : 'bg-white border-gray-300'}`}
+                      disabled={order.priceFinalizationStatus}
                     />
                     {orderErrors[index]?.priceFinalizationDate && (
                       <div className="text-red-600 text-xs mt-1">{orderErrors[index].priceFinalizationDate}</div>

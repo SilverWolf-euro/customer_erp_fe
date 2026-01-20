@@ -59,7 +59,24 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
     const { name, value } = e.target;
     let newForm: OrderForm = { ...form };
     if (name === 'priceFinalizationStatus') {
-      newForm.priceFinalizationStatus = value === 'closed';
+      if (value === 'closed') {
+        // Nếu chọn Đã chốt thì tự động set ngày hiện tại và không cho chỉnh sửa
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const currentDate = `${yyyy}-${mm}-${dd}`;
+        newForm.priceFinalizationStatus = true;
+        newForm.priceFinalizationDate = currentDate;
+      } else {
+        newForm.priceFinalizationStatus = false;
+        newForm.priceFinalizationDate = '';
+      }
+    } else if (name === 'priceFinalizationDate') {
+      // Nếu đã chốt thì không cho chỉnh sửa ngày chốt giá
+      if (!form.priceFinalizationStatus) {
+        newForm.priceFinalizationDate = value;
+      }
     } else if (
       name === 'contractNumber' ||
       name === 'productName' ||
@@ -70,8 +87,7 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
       name === 'currency' ||
       name === 'dueDate' ||
       name === 'paidAmount' ||
-      name === 'paidDate' ||
-      name === 'priceFinalizationDate'
+      name === 'paidDate'
     ) {
       newForm[name] = value;
     }
@@ -336,7 +352,8 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
                           name="priceFinalizationDate"
                           value={form.priceFinalizationDate}
                           onChange={handleChange}
-                          className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400"
+                          className={`w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400 ${form.priceFinalizationStatus ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                          disabled={form.priceFinalizationStatus}
                         />
                       </div>
                       
