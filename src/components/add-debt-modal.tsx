@@ -27,11 +27,13 @@ interface Order {
   quantity: string
   unitPrice: string
   currency?: 'VND' | 'USD';
+  deposit?: string;
   dueDate: string
   paidAmount: string
   paidDate: string
   priceFinalizationDate?: string;
   priceFinalizationStatus?: boolean;
+  note?: string;
 }
 
 interface CustomerOption {
@@ -94,11 +96,13 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
       quantity: "",
       unitPrice: "",
       currency: "VND",
+      deposit: "",
       dueDate: "",
       paidAmount: "",
       paidDate: "",
       priceFinalizationDate: "",
       priceFinalizationStatus: false,
+      note: "",
     },
   ])
 
@@ -113,11 +117,13 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
         quantity: "",
         unitPrice: "",
         currency: "VND",
+        deposit: "",
         dueDate: "",
         paidAmount: "",
         paidDate: "",
         priceFinalizationDate: "",
         priceFinalizationStatus: false,
+        note: "",
       },
     ])
   }
@@ -147,13 +153,20 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
       }
     } else if (field === 'contractNumber' || field === 'productName' || field === 'saleDate' || field === 'totalAmount' || field === 'quantity' || field === 'unitPrice' || field === 'currency' || field === 'dueDate' || field === 'paidAmount' || field === 'paidDate') {
       (newOrders[index] as any)[field] = value;
+    } else if (field === 'deposit') {
+      newOrders[index].deposit = value;
+    } else if (field === 'note') {
+      newOrders[index].note = value;
     }
-    // Tự động tính số tiền phải thu nếu thay đổi số lượng hoặc đơn giá
-    if (field === 'quantity' || field === 'unitPrice') {
+    // Tự động tính lại thành tiền nếu thay đổi số lượng, đơn giá hoặc tiền cọc
+    if (field === 'quantity' || field === 'unitPrice' || field === 'deposit') {
       const quantity = field === 'quantity' ? Number(value) : Number(newOrders[index].quantity);
       const unitPrice = field === 'unitPrice' ? Number(value) : Number(newOrders[index].unitPrice);
+      const deposit = field === 'deposit' ? Number(value) : Number(newOrders[index].deposit || 0);
       if (!isNaN(quantity) && !isNaN(unitPrice) && quantity && unitPrice) {
-        newOrders[index].totalAmount = String(quantity * unitPrice);
+        let total = quantity * unitPrice - (isNaN(deposit) ? 0 : deposit);
+        if (total < 0) total = 0;
+        newOrders[index].totalAmount = String(total);
       }
     }
     setOrders(newOrders);
@@ -223,7 +236,8 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
       dueDate: o.dueDate,
       amountCollected: Number(o.paidAmount || 0),
       status: 0,
-      isDelete: 0
+      isDelete: 0,
+      note: o.note || '',
     }));
     // Format currency helper
     function formatCurrency(amount: string | number, currency: 'VND' | 'USD' = 'VND') {
@@ -360,14 +374,14 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                       Số hợp đồng <span className="text-red-600">*</span>
                     </label>
                     <input
-                      id={`contract-${index}`}
-                      type="text"
-                      placeholder="Nhập hoặc chọn (tối đa 20 ký tự)"
-                      value={order.contractNumber}
-                      onChange={(e) => updateOrder(index, "contractNumber", e.target.value)}
-                      maxLength={20}
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                        id={`contract-${index}`}
+                        type="text"
+                        placeholder="Nhập hoặc chọn (tối đa 255 ký tự)"
+                        value={order.contractNumber}
+                        onChange={(e) => updateOrder(index, "contractNumber", e.target.value)}
+                        maxLength={255}
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
                     {orderErrors[index]?.contractNumber && (
                       <div className="text-red-600 text-xs mt-1">{orderErrors[index].contractNumber}</div>
                     )}
@@ -546,7 +560,44 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                       <div className="text-red-600 text-xs mt-1">{orderErrors[index].totalAmount}</div>
                     )}
                   </div>
-                  
+                  <div className="space-y-2">
+                    <label htmlFor={`deposit-${index}`} className="block text-sm font-medium text-gray-700">
+                      Tiền cọc
+                    </label>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        id={`deposit-${index}`}
+                        type="text"
+                        placeholder="Nhập tiền cọc"
+                        value={order.deposit ? (order.currency === 'USD' ? Number(order.deposit).toLocaleString('en-US') : Number(order.deposit).toLocaleString('vi-VN')) : ''}
+                        min={0}
+                        step={1}
+                        onChange={e => {
+                          let val = e.target.value.replace(/[^\d]/g, '');
+                          updateOrder(index, 'deposit', val);
+                        }}
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        inputMode="numeric"
+                        autoComplete="off"
+                      />
+                      <div className="text-xs text-gray-500 min-w-[70px] text-right">
+                        {formatCurrency(order.deposit || 0, order.currency as any)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <label htmlFor={`note-${index}`} className="block text-sm font-medium text-gray-700">
+                    Ghi chú
+                  </label>
+                  <textarea
+                    id={`note-${index}`}
+                    placeholder="Nhập ghi chú cho đơn hàng này (nếu có)"
+                    value={order.note || ''}
+                    onChange={e => updateOrder(index, 'note', e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[80px]"
+                  />
                 </div>
               </div>
             ))}
