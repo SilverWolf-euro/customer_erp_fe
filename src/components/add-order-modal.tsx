@@ -192,26 +192,48 @@ export function AddOrderModal({
             </div>
             <div>
               <label className="block font-medium mb-1">Số lượng (Kg) *</label>
-              <input name="quantity" value={form.quantity} onChange={e => {
-                const raw = e.target.value.replace(/\./g, '').replace(/[^\d]/g, '');
-                if (/^\d*$/.test(raw)) {
-                  handleChange({ ...e, target: { ...e.target, value: raw, name: 'quantity' } });
-                }
-              }} placeholder="Nhập số lượng" className="w-full border p-2 rounded" />
+              <input
+                name="quantity"
+                value={form.quantity
+                  ? (form.currency === 'VND'
+                      ? Number(form.quantity).toLocaleString('vi-VN')
+                      : Number(form.quantity).toLocaleString('en-US'))
+                  : ''}
+                onChange={e => {
+                  // Cho phép nhập số có dấu chấm hoặc phẩy
+                  let raw = e.target.value.replace(/[.,]/g, "");
+                  if (/^\d*$/.test(raw)) {
+                    handleChange({ ...e, target: { ...e.target, value: raw, name: 'quantity' } });
+                  }
+                }}
+                placeholder="Nhập số lượng"
+                className="w-full border p-2 rounded"
+                inputMode="numeric"
+                autoComplete="off"
+              />
             </div>
             <div>
               <label className="block font-medium mb-1">Đơn giá *</label>
               <div className="flex">
                 <input
                   name="unitPrice"
-                  value={form.unitPrice}
+                  value={form.unitPrice
+                    ? (form.currency === 'VND'
+                        ? Number(form.unitPrice).toLocaleString('vi-VN')
+                        : Number(form.unitPrice).toLocaleString('en-US'))
+                    : ''}
                   onChange={e => {
-                    const raw = e.target.value.replace(/[^\d]/g, '');
-                    handleChange({ ...e, target: { ...e.target, value: raw, name: 'unitPrice' } });
+                    // Cho phép nhập số có dấu chấm hoặc phẩy
+                    let raw = e.target.value.replace(/[.,]/g, "");
+                    if (/^\d*$/.test(raw)) {
+                      handleChange({ ...e, target: { ...e.target, value: raw, name: 'unitPrice' } });
+                    }
                   }}
                   placeholder="Nhập đơn giá"
                   className="flex-1 border border-r-0 p-2 rounded-l"
                   style={{ minWidth: 0 }}
+                  inputMode="numeric"
+                  autoComplete="off"
                 />
                 <select
                   name="currency"
@@ -227,14 +249,39 @@ export function AddOrderModal({
             </div>
             <div>
               <label className="block font-medium mb-1">Thành tiền *</label>
-              <input name="totalAmount" value={form.totalAmount} readOnly className="w-full border p-2 rounded bg-gray-100" tabIndex={-1} />
+              <input
+                name="totalAmount"
+                value={form.totalAmount
+                  ? (form.currency === 'VND'
+                      ? Number(form.totalAmount).toLocaleString('vi-VN')
+                      : Number(form.totalAmount).toLocaleString('en-US'))
+                  : ''}
+                readOnly
+                className="w-full border p-2 rounded bg-gray-100"
+                tabIndex={-1}
+              />
             </div>
             <div>
               <label className="block font-medium mb-1">Tiền cọc</label>
-              <input name="deposit" value={form.deposit} onChange={e => {
-                const raw = e.target.value.replace(/[^\d]/g, '');
-                handleChange({ ...e, target: { ...e.target, value: raw, name: 'deposit' } });
-              }} placeholder="Nhập tiền cọc" className="w-full border p-2 rounded" />
+              <input
+                name="deposit"
+                value={form.deposit
+                  ? (form.currency === 'VND'
+                      ? Number(form.deposit).toLocaleString('vi-VN')
+                      : Number(form.deposit).toLocaleString('en-US'))
+                  : ''}
+                onChange={e => {
+                  // Cho phép nhập số có dấu chấm hoặc phẩy
+                  let raw = e.target.value.replace(/[.,]/g, "");
+                  if (/^\d*$/.test(raw)) {
+                    handleChange({ ...e, target: { ...e.target, value: raw, name: 'deposit' } });
+                  }
+                }}
+                placeholder="Nhập tiền cọc"
+                className="w-full border p-2 rounded"
+                inputMode="numeric"
+                autoComplete="off"
+              />
             </div>
           </div>
           <div>
