@@ -1,4 +1,3 @@
-
 "use client"
 import { useState, useEffect } from "react"
 import { fetchAllCustomers, createContractWithOrder } from "../services/contractService.js"
@@ -181,7 +180,7 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
         err.unitPrice = "Đơn giá phải là số nguyên dương";
       }
       if (!order.totalAmount) err.totalAmount = "Vui lòng nhập số tiền phải thu";
-        if (!order.priceFinalizationDate) err.priceFinalizationDate = "Vui lòng nhập ngày chốt giá";
+        if (!order.priceFinalizationDate) err.priceFinalizationDate = "Vui lòng nhập hạn chốt giá";
       return err;
     });
     setOrderErrors(newOrderErrors);
@@ -429,10 +428,10 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                       <option value="closed">Đã chốt</option>
                     </select>
                   </div>
-                  {/* Ngày chốt giá */}
+                  {/* Hạn chốt giá */}
                   <div className="space-y-2">
                     <label htmlFor={`closing-date-${index}`} className="block text-sm font-medium text-gray-700">
-                      Ngày chốt giá <span className="text-red-600">*</span>
+                      Hạn chốt giá <span className="text-red-600">*</span>
                     </label>
                     <input
                       id={`closing-date-${index}`}
@@ -448,20 +447,20 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                   
                   <div className="space-y-2">
                     <label htmlFor={`quantity-${index}`} className="block text-sm font-medium text-gray-700">
-                      Số lượng <span className="text-red-600">*</span>
+                      Số lượng (Kg)  <span className="text-red-600">*</span>
                     </label>
                     <input
                       id={`quantity-${index}`}
-                      type="number"
+                      type="text"
                       placeholder="Nhập số lượng"
-                      value={order.quantity}
+                      value={order.quantity ? Number(order.quantity).toLocaleString('vi-VN') : ''}
                       min={1}
                       step={1}
                       onChange={(e) => {
-                        // Chỉ cho phép số nguyên dương
-                        const val = e.target.value;
-                        if (/^\d*$/.test(val)) {
-                          updateOrder(index, "quantity", val);
+                        // Chỉ cho phép số nguyên dương, bỏ dấu chấm khi lưu
+                        const raw = e.target.value.replace(/\./g, '').replace(/[^\d]/g, '');
+                        if (/^\d*$/.test(raw)) {
+                          updateOrder(index, "quantity", raw);
                         }
                       }}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -511,7 +510,7 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                   </div>
                   <div className="space-y-2">
                     <label htmlFor={`total-amount-${index}`} className="block text-sm font-medium text-gray-700">
-                      Số tiền phải thu  <span className="text-red-600">*</span>
+                      Thành tiền <span className="text-red-600">*</span>
                     </label>
                     <input
                       id={`total-amount-${index}`}

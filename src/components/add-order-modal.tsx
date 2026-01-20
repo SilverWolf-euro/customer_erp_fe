@@ -258,12 +258,21 @@ export function AddOrderModal({ isOpen, onOpenChange, contractID, onOrderAdded }
           </div>
           
           <div>
-            <label className="block mb-1 font-medium">Số lượng *</label>
+            <label className="block mb-1 font-medium">Số lượng (Kg)*</label>
             <input
-              type="number"
+              type="text"
               name="quantity"
-              value={form.quantity}
-              onChange={handleChange}
+              value={form.quantity ? Number(form.quantity).toLocaleString('vi-VN') : ''}
+              onChange={e => {
+                // Chỉ cho phép số nguyên dương, bỏ dấu chấm khi lưu
+                const raw = e.target.value.replace(/\./g, '').replace(/[^\d]/g, '');
+                if (/^\d*$/.test(raw)) {
+                  // Tạo event giả cho handleChange
+                  handleChange({
+                    target: { name: 'quantity', value: raw } as HTMLInputElement
+                  } as React.ChangeEvent<HTMLInputElement>);
+                }
+              }}
               className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400"
               required
               placeholder="Nhập số lượng"
