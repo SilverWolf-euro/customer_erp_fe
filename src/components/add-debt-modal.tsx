@@ -28,6 +28,7 @@ interface Order {
   quantity: string
   unitPrice: string
   currency?: 'VND' | 'USD';
+  vat?: number;
   deposit?: string;
   dueDate: string
   paidAmount: string
@@ -108,6 +109,7 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
       priceFinalizationDate: "",
       priceFinalizationStatus: false,
       note: "",
+      vat: undefined,
     },
   ])
 
@@ -129,6 +131,7 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
         priceFinalizationDate: "",
         priceFinalizationStatus: false,
         note: "",
+        vat: undefined,
       },
     ])
   }
@@ -160,16 +163,19 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
       (newOrders[index] as any)[field] = value;
     } else if (field === 'deposit') {
       newOrders[index].deposit = value;
+    } else if (field === 'vat') {
+      newOrders[index].vat = value;
     } else if (field === 'note') {
       newOrders[index].note = value;
     }
-    // Tự động tính lại thành tiền nếu thay đổi số lượng, đơn giá hoặc tiền cọc
-    if (field === 'quantity' || field === 'unitPrice' || field === 'deposit') {
+    // Tự động tính lại thành tiền nếu thay đổi số lượng, đơn giá, tiền cọc hoặc VAT
+    if (['quantity', 'unitPrice', 'deposit', 'vat'].includes(field)) {
       const quantity = field === 'quantity' ? Number(value) : Number(newOrders[index].quantity);
       const unitPrice = field === 'unitPrice' ? Number(value) : Number(newOrders[index].unitPrice);
       const deposit = field === 'deposit' ? Number(value) : Number(newOrders[index].deposit || 0);
+      const vat = field === 'vat' ? Number(value) : Number(newOrders[index].vat || 0);
       if (!isNaN(quantity) && !isNaN(unitPrice) && quantity && unitPrice) {
-        let total = quantity * unitPrice - (isNaN(deposit) ? 0 : deposit);
+        let total = quantity * unitPrice * (100 + vat) / 100 - (isNaN(deposit) ? 0 : deposit);
         if (total < 0) total = 0;
         newOrders[index].totalAmount = String(total);
       }
@@ -193,6 +199,7 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
       if (!order.productName) err.productName = "Vui lòng nhập tên hàng";
       if (!order.saleDate) err.saleDate = "Vui lòng chọn ngày bán hàng";
       if (!order.dueDate) err.dueDate = "Vui lòng chọn ngày đến hạn";
+      if (!order.vat) err.vat = "Vui lòng chọn VAT";
       // Validate dueDate >= saleDate
       if (order.saleDate && order.dueDate) {
         const sale = new Date(order.saleDate);
@@ -243,6 +250,7 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
       status: 0,
       isDelete: 0,
       note: o.note || '',
+      vat: o.vat || 8,
     }));
     // Format currency helper
     function formatCurrency(amount: string | number, currency: 'VND' | 'USD' = 'VND') {
@@ -542,9 +550,7 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                         inputMode="numeric"
                         autoComplete="off"
                       />
-                      <div className="text-xs text-gray-500 min-w-[70px] text-right">
-                        {formatCurrency(order.unitPrice, order.currency as any)}
-                      </div>
+                      
                       <select
                         value={order.currency || 'VND'}
                         onChange={e => updateOrder(index, 'currency', e.target.value)}
@@ -562,18 +568,32 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                     <label htmlFor={`total-amount-${index}`} className="block text-sm font-medium text-gray-700">
                       Thành tiền <span className="text-red-600">*</span>
                     </label>
-                    <input
-                      id={`total-amount-${index}`}
-                      type="text"
-                      value={order.currency === 'USD' && order.totalAmount ? Number(order.totalAmount).toLocaleString('en-US') : order.currency === 'VND' && order.totalAmount ? Number(order.totalAmount).toLocaleString('vi-VN') : order.totalAmount}
-                      readOnly
-                      className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 focus:outline-none cursor-not-allowed"
-                      tabIndex={-1}
-                      inputMode="numeric"
-                      autoComplete="off"
-                    />
-                    <div className="text-xs text-gray-500 min-w-[70px] text-right">
-                      {formatCurrency(order.totalAmount, order.currency as any)}
+                    <div className="flex gap-2 items-center">
+                      <input
+                        id={`total-amount-${index}`}
+                        type="text"
+                        value={order.currency === 'USD' && order.totalAmount ? Number(order.totalAmount).toLocaleString('en-US') : order.currency === 'VND' && order.totalAmount ? Number(order.totalAmount).toLocaleString('vi-VN') : order.totalAmount}
+                        readOnly
+                        className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 focus:outline-none cursor-not-allowed"
+                        tabIndex={-1}
+                        inputMode="numeric"
+                        autoComplete="off"
+                      />
+                      {/* <div className="text-xs text-gray-500 min-w-[70px] text-right">
+                        {formatCurrency(order.totalAmount, order.currency as any)}
+                      </div> */}
+                      {/* VAT select box */}
+                        <select
+                          value={order.vat === undefined ? '' : order.vat}
+                          onChange={e => updateOrder(index, 'vat', e.target.value ? Number(e.target.value) : undefined)}
+                          className="px-2 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[70px]"
+                          style={{ width: '80px' }}
+                          aria-label="VAT"
+                        >
+                          <option value="" disabled>VAT</option>
+                          <option value={8}>8%</option>
+                          <option value={10}>10%</option>
+                        </select>
                     </div>
                     {orderErrors[index]?.totalAmount && (
                       <div className="text-red-600 text-xs mt-1">{orderErrors[index].totalAmount}</div>

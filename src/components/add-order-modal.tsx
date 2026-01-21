@@ -15,6 +15,7 @@ type OrderForm = {
   paidDate: string;
   priceFinalizationDate: string;
   priceFinalizationStatus: boolean;
+  vat?: number;
   note?: string;
   [key: string]: any;
 };
@@ -47,6 +48,7 @@ export function AddOrderModal({
     paidDate: "",
     priceFinalizationDate: "",
     priceFinalizationStatus: false,
+    vat: undefined,
     note: "",
   });
 
@@ -75,12 +77,13 @@ export function AddOrderModal({
       } else {
         next[name] = value;
       }
-      // Tự động tính lại tổng tiền nếu thay đổi quantity, unitPrice, deposit
-      if (["quantity", "unitPrice", "deposit"].includes(name)) {
+      // Tự động tính lại tổng tiền nếu thay đổi quantity, unitPrice, deposit, vat
+      if (["quantity", "unitPrice", "deposit", "vat"].includes(name)) {
         const quantity = name === "quantity" ? Number(value) : Number(next.quantity);
         const unitPrice = name === "unitPrice" ? Number(value) : Number(next.unitPrice);
         const deposit = name === "deposit" ? Number(value) : Number(next.deposit || 0);
-        let total = quantity * unitPrice - (isNaN(deposit) ? 0 : deposit);
+        const vat = name === "vat" ? Number(value) : Number(next.vat || 0);
+        let total = quantity * unitPrice * (100 + vat) / 100 - (isNaN(deposit) ? 0 : deposit);
         if (total < 0) total = 0;
         next.totalAmount = String(total);
       }
@@ -103,6 +106,8 @@ export function AddOrderModal({
     if (!form.priceFinalizationStatus && !form.priceFinalizationDate) {
       return alert("Vui lòng chọn hạn chốt giá khi chưa chốt giá");
     }
+
+    if (form.vat === undefined) return alert("Vui lòng chọn VAT");
 
     if (new Date(form.dueDate) <= new Date(form.saleDate)) {
       return alert("Ngày đến hạn phải lớn hơn ngày bán");
@@ -129,6 +134,7 @@ export function AddOrderModal({
         priceFinalizationStatus: form.priceFinalizationStatus,
         priceFinalizationDate: form.priceFinalizationDate,
         note: form.note,
+        vat: form.vat,
         status: 0,
         isDelete: 0,
       });
@@ -260,6 +266,19 @@ export function AddOrderModal({
                 className="w-full border p-2 rounded bg-gray-100"
                 tabIndex={-1}
               />
+            </div>
+            <div>
+              <label className="block font-medium mb-1">VAT *</label>
+              <select
+                name="vat"
+                value={form.vat === undefined ? '' : form.vat}
+                onChange={handleChange}
+                className="w-full border p-2 rounded bg-white"
+              >
+                <option value="" disabled>Chọn VAT</option>
+                <option value={8}>8%</option>
+                <option value={10}>10%</option>
+              </select>
             </div>
             <div>
               <label className="block font-medium mb-1">Tiền cọc</label>
