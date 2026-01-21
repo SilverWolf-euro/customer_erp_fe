@@ -276,8 +276,11 @@ export function AddOrderModal({
                 className="w-full border p-2 rounded bg-white"
               >
                 <option value="" disabled>Chọn VAT</option>
-                <option value={8}>8%</option>
-                <option value={10}>10%</option>
+                <option value={1}>0%</option>
+                <option value={2}>5%</option>
+                <option value={3}>8%</option>
+                <option value={4}>10%</option>
+                <option value={5}>KCT</option>
               </select>
             </div>
             <div>

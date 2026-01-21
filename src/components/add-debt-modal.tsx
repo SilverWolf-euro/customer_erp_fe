@@ -175,7 +175,21 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
       const deposit = field === 'deposit' ? Number(value) : Number(newOrders[index].deposit || 0);
       const vat = field === 'vat' ? Number(value) : Number(newOrders[index].vat || 0);
       if (!isNaN(quantity) && !isNaN(unitPrice) && quantity && unitPrice) {
-        let total = quantity * unitPrice * (100 + vat) / 100 - (isNaN(deposit) ? 0 : deposit);
+        let total = 0;
+        // VAT: 1:0%, 2:5%, 3:8%, 4:10%, 5:KCT
+        if (vat === 1 || vat === 5) {
+          // 0% hoặc KCT: giữ nguyên thành tiền (không cộng VAT)
+          total = quantity * unitPrice - (isNaN(deposit) ? 0 : deposit);
+        } else if (vat === 2) {
+          total = quantity * unitPrice * 1.05 - (isNaN(deposit) ? 0 : deposit);
+        } else if (vat === 3) {
+          total = quantity * unitPrice * 1.08 - (isNaN(deposit) ? 0 : deposit);
+        } else if (vat === 4) {
+          total = quantity * unitPrice * 1.10 - (isNaN(deposit) ? 0 : deposit);
+        } else {
+          // fallback: giữ logic cũ
+          total = quantity * unitPrice * (100 + vat) / 100 - (isNaN(deposit) ? 0 : deposit);
+        }
         if (total < 0) total = 0;
         newOrders[index].totalAmount = String(total);
       }
@@ -591,8 +605,11 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                           aria-label="VAT"
                         >
                           <option value="" disabled>VAT</option>
-                          <option value={8}>8%</option>
-                          <option value={10}>10%</option>
+                          <option value={1}>0%</option>
+                          <option value={2}>5%</option>
+                          <option value={3}>8%</option>
+                          <option value={4}>10%</option>
+                          <option value={5}>KCT</option>
                         </select>
                     </div>
                     {orderErrors[index]?.totalAmount && (
