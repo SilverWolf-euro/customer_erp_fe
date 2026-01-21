@@ -65,6 +65,7 @@ interface Order {
   currency?: 'VND' | 'USD';
   priceFinalizationDate?: string
   priceFinalizationStatus?: boolean
+  vat?: number
 }
 
 interface Customer {
@@ -437,7 +438,24 @@ export function DebtManagementPage() {
                                   <td className="px-4 py-4 text-sm text-black">{order.saleDate}</td>
                                   <td className="px-4 py-4 text-sm text-right text-black">{order.quantity ?? '-'}</td>
                                   <td className="px-4 py-4 text-sm text-right text-black">{order.unitPrice ? formatCurrency(order.unitPrice, order.currency === 'USD' ? 'USD' : 'VND') : '-'}</td>
-                                  <td className="px-4 py-4 text-sm text-right text-black">{formatCurrency(order.totalAmount, order.currency === 'USD' ? 'USD' : 'VND')}</td>
+                                  <td className="px-4 py-4 text-sm text-right text-black">
+                                    {formatCurrency(order.totalAmount, order.currency === 'USD' ? 'USD' : 'VND')}
+                                    {/* VAT label */}
+                                    {order.vat !== undefined && order.vat !== null && (
+                                      <span className="ml-1 text-xs text-gray-500 font-semibold">
+                                        {(() => {
+                                          switch (order.vat) {
+                                            case 1: return '(0%)';
+                                            case 2: return '(5%)';
+                                            case 3: return '(8%)';
+                                            case 4: return '(10%)';
+                                            case 5: return '(KCT)';
+                                            default: return '';
+                                          }
+                                        })()}
+                                      </span>
+                                    )}
+                                  </td>
                                   <td className="px-4 py-4 text-sm text-right">
                                     <div className="space-y-1">
                                       <div className="text-black">{formatCurrency(order.paid, order.currency === 'USD' ? 'USD' : 'VND')}</div>

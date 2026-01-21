@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { insertOrder } from "../services/orderService";
 
 type OrderForm = {
@@ -52,6 +52,28 @@ export function AddOrderModal({
     note: "",
   });
 
+  useEffect(() => {
+      if (isOpen) {
+        setForm({
+          contractNumber: "",
+          productName: "",
+          saleDate: "",
+          totalAmount: "",
+          quantity: "",
+          unitPrice: "",
+          currency: "VND",
+          deposit: "",
+          dueDate: "",
+          paidAmount: "",
+          paidDate: "",
+          priceFinalizationDate: "",
+          priceFinalizationStatus: false,
+          vat: undefined,
+          note: "",
+        });
+      }
+    }, [isOpen]);
+
   // =========================
   // HANDLE CHANGE (CHUẨN)
   // =========================
@@ -85,7 +107,12 @@ export function AddOrderModal({
         const vat = name === "vat" ? Number(value) : Number(next.vat || 0);
         let total = quantity * unitPrice * (100 + vat) / 100 - (isNaN(deposit) ? 0 : deposit);
         if (total < 0) total = 0;
-        next.totalAmount = String(total);
+        if (next.currency === 'USD') {
+          // Làm tròn 2 chữ số, >=5 làm tròn lên, <5 làm tròn xuống
+          next.totalAmount = (Math.round(total * 100) / 100).toFixed(2);
+        } else {
+          next.totalAmount = String(Math.round(total));
+        }
       }
       return next;
     });
@@ -223,22 +250,29 @@ export function AddOrderModal({
               <div className="flex">
                 <input
                   name="unitPrice"
-                  value={form.unitPrice
-                    ? (form.currency === 'VND'
-                        ? Number(form.unitPrice).toLocaleString('vi-VN')
-                        : Number(form.unitPrice).toLocaleString('en-US'))
-                    : ''}
+                  value={form.unitPrice || ''}
                   onChange={e => {
-                    // Cho phép nhập số có dấu chấm hoặc phẩy
-                    let raw = e.target.value.replace(/[.,]/g, "");
-                    if (/^\d*$/.test(raw)) {
-                      handleChange({ ...e, target: { ...e.target, value: raw, name: 'unitPrice' } });
+                    let val = e.target.value;
+                    if (form.currency === 'USD') {
+                      val = val.replace(/[^\d.]/g, '');
+                      const parts = val.split('.');
+                      if (parts.length > 2) {
+                        val = parts[0] + '.' + parts.slice(1).join('');
+                      }
+                      if (val.includes('.')) {
+                        const [intPart, decPart] = val.split('.');
+                        val = intPart + '.' + decPart.slice(0, 2);
+                      }
+                    } else {
+                      val = val.replace(/\D/g, '');
+                      if (val) val = String(Number(val));
                     }
+                    handleChange({ ...e, target: { ...e.target, value: val, name: 'unitPrice' } });
                   }}
                   placeholder="Nhập đơn giá"
                   className="flex-1 border border-r-0 p-2 rounded-l"
                   style={{ minWidth: 0 }}
-                  inputMode="numeric"
+                  inputMode={form.currency === 'USD' ? 'decimal' : 'numeric'}
                   autoComplete="off"
                 />
                 <select
@@ -287,21 +321,28 @@ export function AddOrderModal({
               <label className="block font-medium mb-1">Tiền cọc</label>
               <input
                 name="deposit"
-                value={form.deposit
-                  ? (form.currency === 'VND'
-                      ? Number(form.deposit).toLocaleString('vi-VN')
-                      : Number(form.deposit).toLocaleString('en-US'))
-                  : ''}
+                value={form.deposit || ''}
                 onChange={e => {
-                  // Cho phép nhập số có dấu chấm hoặc phẩy
-                  let raw = e.target.value.replace(/[.,]/g, "");
-                  if (/^\d*$/.test(raw)) {
-                    handleChange({ ...e, target: { ...e.target, value: raw, name: 'deposit' } });
+                  let val = e.target.value;
+                  if (form.currency === 'USD') {
+                    val = val.replace(/[^\d.]/g, '');
+                    const parts = val.split('.');
+                    if (parts.length > 2) {
+                      val = parts[0] + '.' + parts.slice(1).join('');
+                    }
+                    if (val.includes('.')) {
+                      const [intPart, decPart] = val.split('.');
+                      val = intPart + '.' + decPart.slice(0, 2);
+                    }
+                  } else {
+                    val = val.replace(/\D/g, '');
+                    if (val) val = String(Number(val));
                   }
+                  handleChange({ ...e, target: { ...e.target, value: val, name: 'deposit' } });
                 }}
                 placeholder="Nhập tiền cọc"
                 className="w-full border p-2 rounded"
-                inputMode="numeric"
+                inputMode={form.currency === 'USD' ? 'decimal' : 'numeric'}
                 autoComplete="off"
               />
             </div>

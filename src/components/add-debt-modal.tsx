@@ -170,9 +170,12 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
     }
     // Tự động tính lại thành tiền nếu thay đổi số lượng, đơn giá, tiền cọc hoặc VAT
     if (['quantity', 'unitPrice', 'deposit', 'vat'].includes(field)) {
-      const quantity = field === 'quantity' ? Number(value) : Number(newOrders[index].quantity);
-      const unitPrice = field === 'unitPrice' ? Number(value) : Number(newOrders[index].unitPrice);
-      const deposit = field === 'deposit' ? Number(value) : Number(newOrders[index].deposit || 0);
+      const currency = newOrders[index].currency;
+      const quantity = field === 'quantity' ? (currency === 'USD' ? parseFloat(value) : Number(value)) : (currency === 'USD' ? parseFloat(newOrders[index].quantity) : Number(newOrders[index].quantity));
+      const unitPrice = field === 'unitPrice' ? (currency === 'USD' ? parseFloat(value) : Number(value)) : (currency === 'USD' ? parseFloat(newOrders[index].unitPrice) : Number(newOrders[index].unitPrice));
+      // Đảm bảo deposit luôn là string khi truyền vào parseFloat, tránh truyền số 0
+      const depositStr = field === 'deposit' ? value : (newOrders[index].deposit ?? '');
+      const deposit = currency === 'USD' ? parseFloat(depositStr || '0') : Number(depositStr || '0');
       const vat = field === 'vat' ? Number(value) : Number(newOrders[index].vat || 0);
       if (!isNaN(quantity) && !isNaN(unitPrice) && quantity && unitPrice) {
         let total = 0;
@@ -191,7 +194,12 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
           total = quantity * unitPrice * (100 + vat) / 100 - (isNaN(deposit) ? 0 : deposit);
         }
         if (total < 0) total = 0;
-        newOrders[index].totalAmount = String(total);
+        // USD: làm tròn 2 số thập phân, VND: làm tròn số nguyên
+        if (currency === 'USD') {
+          newOrders[index].totalAmount = total.toFixed(2);
+        } else {
+          newOrders[index].totalAmount = String(Math.round(total));
+        }
       }
     }
     setOrders(newOrders);
@@ -231,11 +239,22 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
       // Validate unit price
       if (!order.unitPrice) {
         err.unitPrice = "Vui lòng nhập đơn giá";
-      } else if (isNaN(Number(order.unitPrice)) || Number(order.unitPrice) <= 0 || !/^[0-9]+$/.test(order.unitPrice)) {
-        err.unitPrice = "Đơn giá phải là số nguyên dương";
+      } else if (order.currency === 'USD') {
+        // USD: cho phép số thập phân dương
+        if (isNaN(parseFloat(order.unitPrice)) || parseFloat(order.unitPrice) <= 0 || !/^\d+(\.\d{1,2})?$/.test(order.unitPrice)) {
+          err.unitPrice = "Đơn giá USD phải là số dương, tối đa 2 số thập phân";
+        }
+      } else {
+        // VND: chỉ cho phép số nguyên dương
+        if (isNaN(Number(order.unitPrice)) || Number(order.unitPrice) <= 0 || !/^[0-9]+$/.test(order.unitPrice)) {
+          err.unitPrice = "Đơn giá phải là số nguyên dương";
+        }
       }
       if (!order.totalAmount) err.totalAmount = "Vui lòng nhập số tiền phải thu";
-        if (!order.priceFinalizationDate) err.priceFinalizationDate = "Vui lòng nhập hạn chốt giá";
+      if (order.vat === undefined || order.vat === null || Number.isNaN(order.vat)) {
+        err.vat = "Vui lòng chọn VAT";
+      }
+      if (!order.priceFinalizationDate) err.priceFinalizationDate = "Vui lòng nhập hạn chốt giá";
       return err;
     });
     setOrderErrors(newOrderErrors);
@@ -550,21 +569,35 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                         id={`unit-price-${index}`}
                         type="text"
                         placeholder="Nhập đơn giá"
-                        value={order.currency === 'USD' && order.unitPrice ? Number(order.unitPrice).toLocaleString('en-US') : order.currency === 'VND' && order.unitPrice ? Number(order.unitPrice).toLocaleString('vi-VN') : order.unitPrice}
+                        value={order.unitPrice || ''}
                         min={1}
-                        step={1}
+                        step={order.currency === 'USD' ? '0.01' : '1'}
+                        inputMode={order.currency === 'USD' ? 'decimal' : 'numeric'}
                         onChange={(e) => {
-                          let val = e.target.value.replace(/[^\d]/g, '');
-                          if (order.currency === 'VND' && val) {
-                            val = String(Number(val));
+                          let val = e.target.value;
+                          if (order.currency === 'USD') {
+                            // Cho phép số thập phân, loại bỏ ký tự không hợp lệ
+                            val = val.replace(/[^\d.]/g, '');
+                            // Chỉ cho phép 1 dấu chấm
+                            const parts = val.split('.');
+                            if (parts.length > 2) {
+                              val = parts[0] + '.' + parts.slice(1).join('');
+                            }
+                            // Giới hạn 2 số sau dấu chấm
+                            if (val.includes('.')) {
+                              const [intPart, decPart] = val.split('.');
+                              val = intPart + '.' + decPart.slice(0, 2);
+                            }
+                          } else {
+                            // VND chỉ cho phép số nguyên
+                            val = val.replace(/\D/g, '');
+                            if (val) val = String(Number(val));
                           }
                           updateOrder(index, "unitPrice", val);
                         }}
                         className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        inputMode="numeric"
                         autoComplete="off"
                       />
-                      
                       <select
                         value={order.currency || 'VND'}
                         onChange={e => updateOrder(index, 'currency', e.target.value)}
@@ -612,6 +645,36 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                           <option value={5}>KCT</option>
                         </select>
                     </div>
+                    {orderErrors[index]?.vat && (
+                      <div className="text-red-600 text-xs mt-1">{orderErrors[index].vat}</div>
+                    )}
+                    {/* Hiển thị số tiền VAT nếu đã chọn VAT và có đủ dữ liệu */}
+                    {order.vat && order.quantity && order.unitPrice && !isNaN(Number(order.quantity)) && !isNaN(Number(order.unitPrice)) && (
+                      (() => {
+                        const currency = order.currency;
+                        const quantity = currency === 'USD' ? parseFloat(order.quantity) : Number(order.quantity);
+                        const unitPrice = currency === 'USD' ? parseFloat(order.unitPrice) : Number(order.unitPrice);
+                        const deposit = currency === 'USD' ? parseFloat(order.deposit || '0') : Number(order.deposit || '0');
+                        let vatAmount = 0;
+                        if (order.vat === 2) {
+                          vatAmount = quantity * unitPrice * 0.05;
+                        } else if (order.vat === 3) {
+                          vatAmount = quantity * unitPrice * 0.08;
+                        } else if (order.vat === 4) {
+                          vatAmount = quantity * unitPrice * 0.10;
+                        } else {
+                          vatAmount = 0;
+                        }
+                        if (currency === 'USD') {
+                          vatAmount = Math.round(vatAmount * 100) / 100;
+                        } else {
+                          vatAmount = Math.round(vatAmount);
+                        }
+                        return vatAmount > 0 ? (
+                          <div className="text-xs text-blue-600 mt-1">Tiền VAT: {formatCurrency(vatAmount, currency)}</div>
+                        ) : null;
+                      })()
+                    )}
                     {orderErrors[index]?.totalAmount && (
                       <div className="text-red-600 text-xs mt-1">{orderErrors[index].totalAmount}</div>
                     )}
@@ -625,19 +688,33 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                         id={`deposit-${index}`}
                         type="text"
                         placeholder="Nhập tiền cọc"
-                        value={order.deposit ? (order.currency === 'USD' ? Number(order.deposit).toLocaleString('en-US') : Number(order.deposit).toLocaleString('vi-VN')) : ''}
+                        value={order.deposit || ''}
                         min={0}
-                        step={1}
+                        step={order.currency === 'USD' ? '0.01' : '1'}
+                        inputMode={order.currency === 'USD' ? 'decimal' : 'numeric'}
                         onChange={e => {
-                          let val = e.target.value.replace(/[^\d]/g, '');
+                          let val = e.target.value;
+                          if (order.currency === 'USD') {
+                            val = val.replace(/[^\d.]/g, '');
+                            const parts = val.split('.');
+                            if (parts.length > 2) {
+                              val = parts[0] + '.' + parts.slice(1).join('');
+                            }
+                            if (val.includes('.')) {
+                              const [intPart, decPart] = val.split('.');
+                              val = intPart + '.' + decPart.slice(0, 2);
+                            }
+                          } else {
+                            val = val.replace(/\D/g, '');
+                            if (val) val = String(Number(val));
+                          }
                           updateOrder(index, 'deposit', val);
                         }}
                         className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        inputMode="numeric"
                         autoComplete="off"
                       />
                       <div className="text-xs text-gray-500 min-w-[70px] text-right">
-                        {formatCurrency(order.deposit || 0, order.currency as any)}
+                        {formatCurrency(order.deposit ? order.deposit : "0", order.currency as any)}
                       </div>
                     </div>
                   </div>
