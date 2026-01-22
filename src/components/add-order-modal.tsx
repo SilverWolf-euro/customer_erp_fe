@@ -104,8 +104,11 @@ export function AddOrderModal({
         const quantity = name === "quantity" ? Number(value) : Number(next.quantity);
         const unitPrice = name === "unitPrice" ? Number(value) : Number(next.unitPrice);
         const deposit = name === "deposit" ? Number(value) : Number(next.deposit || 0);
-        const vat = name === "vat" ? Number(value) : Number(next.vat || 0);
-        let total = quantity * unitPrice * (100 + vat) / 100 - (isNaN(deposit) ? 0 : deposit);
+        // Map giá trị vat (1-5) sang phần trăm thực tế
+        const vatMap: Record<number, number> = { 1: 0, 2: 5, 3: 8, 4: 10, 5: 0 };
+        const vatKey = name === "vat" ? Number(value) : Number(next.vat || 0);
+        const vatPercent = vatMap[vatKey] ?? 0;
+        let total = quantity * unitPrice * (100 + vatPercent) / 100 - (isNaN(deposit) ? 0 : deposit);
         if (total < 0) total = 0;
         if (next.currency === 'USD') {
           // Làm tròn 2 chữ số, >=5 làm tròn lên, <5 làm tròn xuống

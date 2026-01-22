@@ -420,7 +420,7 @@ export function DebtManagementPage() {
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Số lượng</th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Đơn giá</th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">
-                                  Số tiền phải thu
+                                  Số tiền phải thu(VAT)
                                 </th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Đã thu</th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Còn phải thu</th>
