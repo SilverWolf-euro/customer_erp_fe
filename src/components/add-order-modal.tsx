@@ -145,6 +145,9 @@ export function AddOrderModal({
 
     if (+form.quantity <= 0) return alert("Số lượng phải > 0");
     if (+form.unitPrice <= 0) return alert("Đơn giá phải > 0");
+    if (form.currency === 'USD' && !/^\d+(\.\d{1,6})?$/.test(form.unitPrice)) {
+      return alert('Đơn giá USD phải là số dương, tối đa 6 số thập phân');
+    }
     if (+form.totalAmount <= 0) return alert("Số tiền phải thu phải > 0");
 
     setLoading(true);
@@ -264,7 +267,7 @@ export function AddOrderModal({
                       }
                       if (val.includes('.')) {
                         const [intPart, decPart] = val.split('.');
-                        val = intPart + '.' + decPart.slice(0, 2);
+                        val = intPart + '.' + decPart.slice(0, 6);
                       }
                     } else {
                       val = val.replace(/\D/g, '');

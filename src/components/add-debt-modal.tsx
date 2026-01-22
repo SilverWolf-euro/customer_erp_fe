@@ -240,9 +240,9 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
       if (!order.unitPrice) {
         err.unitPrice = "Vui lòng nhập đơn giá";
       } else if (order.currency === 'USD') {
-        // USD: cho phép số thập phân dương
-        if (isNaN(parseFloat(order.unitPrice)) || parseFloat(order.unitPrice) <= 0 || !/^\d+(\.\d{1,2})?$/.test(order.unitPrice)) {
-          err.unitPrice = "Đơn giá USD phải là số dương, tối đa 2 số thập phân";
+        // USD: cho phép số thập phân dương, tối đa 6 số sau dấu chấm
+        if (isNaN(parseFloat(order.unitPrice)) || parseFloat(order.unitPrice) <= 0 || !/^\d+(\.\d{1,6})?$/.test(order.unitPrice)) {
+          err.unitPrice = "Đơn giá USD phải là số dương, tối đa 6 số thập phân";
         }
       } else {
         // VND: chỉ cho phép số nguyên dương
@@ -571,7 +571,7 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                         placeholder="Nhập đơn giá"
                         value={order.unitPrice || ''}
                         min={1}
-                        step={order.currency === 'USD' ? '0.01' : '1'}
+                        step={order.currency === 'USD' ? '0.000001' : '1'}
                         inputMode={order.currency === 'USD' ? 'decimal' : 'numeric'}
                         onChange={(e) => {
                           let val = e.target.value;
@@ -583,10 +583,10 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                             if (parts.length > 2) {
                               val = parts[0] + '.' + parts.slice(1).join('');
                             }
-                            // Giới hạn 2 số sau dấu chấm
+                            // Giới hạn 6 số sau dấu chấm
                             if (val.includes('.')) {
                               const [intPart, decPart] = val.split('.');
-                              val = intPart + '.' + decPart.slice(0, 2);
+                              val = intPart + '.' + decPart.slice(0, 6);
                             }
                           } else {
                             // VND chỉ cho phép số nguyên
