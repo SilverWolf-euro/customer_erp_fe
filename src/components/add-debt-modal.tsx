@@ -619,11 +619,29 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                       <input
                         id={`total-amount-${index}`}
                         type="text"
-                        value={order.currency === 'USD' && order.totalAmount ? Number(order.totalAmount).toLocaleString('en-US') : order.currency === 'VND' && order.totalAmount ? Number(order.totalAmount).toLocaleString('vi-VN') : order.totalAmount}
-                        readOnly
-                        className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 focus:outline-none cursor-not-allowed"
-                        tabIndex={-1}
-                        inputMode="numeric"
+                        value={order.totalAmount}
+                        onChange={e => {
+                          let val = e.target.value;
+                          if (order.currency === 'USD') {
+                            // Cho phép số, dấu chấm, tối đa 2 số sau dấu chấm
+                            val = val.replace(/[^\d.]/g, '');
+                            const parts = val.split('.');
+                            if (parts.length > 2) {
+                              val = parts[0] + '.' + parts.slice(1).join('');
+                            }
+                            if (val.includes('.')) {
+                              const [intPart, decPart] = val.split('.');
+                              val = intPart + '.' + decPart.slice(0, 2);
+                            }
+                          } else {
+                            // VND: chỉ cho phép số nguyên
+                            val = val.replace(/\D/g, '');
+                            if (val) val = String(Number(val));
+                          }
+                          updateOrder(index, 'totalAmount', val);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none"
+                        inputMode={order.currency === 'USD' ? 'decimal' : 'numeric'}
                         autoComplete="off"
                       />
                       {/* <div className="text-xs text-gray-500 min-w-[70px] text-right">

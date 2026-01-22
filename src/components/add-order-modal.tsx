@@ -294,14 +294,30 @@ export function AddOrderModal({
               <label className="block font-medium mb-1">Thành tiền *</label>
               <input
                 name="totalAmount"
-                value={form.totalAmount
-                  ? (form.currency === 'VND'
-                      ? Number(form.totalAmount).toLocaleString('vi-VN')
-                      : Number(form.totalAmount).toLocaleString('en-US'))
-                  : ''}
-                readOnly
-                className="w-full border p-2 rounded bg-gray-100"
-                tabIndex={-1}
+                value={form.totalAmount}
+                onChange={e => {
+                  let val = e.target.value;
+                  if (form.currency === 'USD') {
+                    // Cho phép số, dấu chấm, tối đa 2 số sau dấu chấm
+                    val = val.replace(/[^\d.]/g, '');
+                    const parts = val.split('.');
+                    if (parts.length > 2) {
+                      val = parts[0] + '.' + parts.slice(1).join('');
+                    }
+                    if (val.includes('.')) {
+                      const [intPart, decPart] = val.split('.');
+                      val = intPart + '.' + decPart.slice(0, 2);
+                    }
+                  } else {
+                    // VND: chỉ cho phép số nguyên
+                    val = val.replace(/\D/g, '');
+                    if (val) val = String(Number(val));
+                  }
+                  setForm(prev => ({ ...prev, totalAmount: val }));
+                }}
+                className="w-full border p-2 rounded"
+                inputMode={form.currency === 'USD' ? 'decimal' : 'numeric'}
+                autoComplete="off"
               />
             </div>
             <div>
