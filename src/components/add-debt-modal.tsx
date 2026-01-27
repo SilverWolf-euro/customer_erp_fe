@@ -268,23 +268,29 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
       statusContract: contractStatus,
       isDelete: 0
     };
-    const orderItems = orders.map(o => ({
-      productName: o.productName,
-      orderNumber: o.contractNumber,
-      salesDate: o.saleDate,
-      quantity: Number(o.quantity || 0),
-      unitPrice: Number(o.unitPrice || 0),
-      currency: o.currency === 'USD' ? 0 : 1,
-      priceFinalizationDate: o.priceFinalizationDate || "",
-      priceFinalizationStatus: !!o.priceFinalizationStatus,
-      amountReceivable: Number(o.totalAmount || 0),
-      dueDate: o.dueDate,
-      amountCollected: Number(o.paidAmount || 0),
-      status: 0,
-      isDelete: 0,
-      note: o.note || '',
-      vat: o.vat || 8,
-    }));
+    const orderItems = orders.map(o => {
+      const isFinalized = !!o.priceFinalizationStatus;
+      return {
+        productName: o.productName,
+        orderNumber: o.contractNumber,
+        salesDate: o.saleDate,
+        quantity: Number(o.quantity || 0),
+        unitPrice: isFinalized ? 0 : Number(o.unitPrice || 0),
+        finalPrice: isFinalized ? Number(o.unitPrice || 0) : 0,
+        currency: o.currency === 'USD' ? 0 : 1,
+        priceFinalizationDate: o.priceFinalizationDate || "",
+        priceFinalizationStatus: isFinalized,
+        amountReceivable: isFinalized ? 0 : Number(o.totalAmount || 0),
+        amountReceivableFinal: isFinalized ? Number(o.totalAmount || 0) : 0,
+        deposit: Number(o.deposit || 0),
+        dueDate: o.dueDate,
+        amountCollected: Number(o.paidAmount || 0),
+        status: 0,
+        isDelete: 0,
+        note: o.note || '',
+        vat: o.vat || 8,
+      };
+    });
     // Format currency helper
     function formatCurrency(amount: string | number, currency: 'VND' | 'USD' = 'VND') {
       const num = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -736,6 +742,52 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                       </div>
                     </div>
                   </div>
+                  {/* Tiền VAT */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">Tiền VAT</label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          value={(() => {
+                            const currency = order.currency;
+                            const quantity = currency === 'USD' ? parseFloat(order.quantity) : Number(order.quantity);
+                            const unitPrice = currency === 'USD' ? parseFloat(order.unitPrice) : Number(order.unitPrice);
+                            let vatAmount = 0;
+                            if (order.vat === 2) {
+                              vatAmount = quantity * unitPrice * 0.05;
+                            } else if (order.vat === 3) {
+                              vatAmount = quantity * unitPrice * 0.08;
+                            } else if (order.vat === 4) {
+                              vatAmount = quantity * unitPrice * 0.10;
+                            } else {
+                              vatAmount = 0;
+                            }
+                            if (currency === 'USD') {
+                              vatAmount = Math.round(vatAmount * 100) / 100;
+                            } else {
+                              vatAmount = Math.round(vatAmount);
+                            }
+                            return formatCurrency(vatAmount, currency);
+                          })()}
+                          readOnly
+                          disabled
+                          className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-blue-600 font-semibold cursor-not-allowed"
+                        />
+                      </div>
+                    </div>
+                    {/* Tổng tiền phải thu */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">Tổng tiền phải thu</label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          value={formatCurrency(order.totalAmount || 0, order.currency as any)}
+                          readOnly
+                          disabled
+                          className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-green-600 font-semibold cursor-not-allowed"
+                        />
+                      </div>
+                    </div>
                 </div>
                 <div className="space-y-2 col-span-2">
                   <label htmlFor={`note-${index}`} className="block text-sm font-medium text-gray-700">

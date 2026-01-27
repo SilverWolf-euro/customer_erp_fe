@@ -152,16 +152,19 @@ export function AddOrderModal({
 
     setLoading(true);
     try {
+      const isFinalized = !!form.priceFinalizationStatus;
       await insertOrder({
         contractID,
         orderNumber: form.contractNumber,
         productName: form.productName,
         salesDate: new Date(form.saleDate).toISOString(),
         quantity: Number(form.quantity),
-        unitPrice: Number(form.unitPrice),
+        unitPrice: isFinalized ? 0 : Number(form.unitPrice),
+        finalPrice: isFinalized ? Number(form.unitPrice) : 0,
         currency: form.currency === "VND" ? 1 : 0,
         deposit: Number(form.deposit || 0),
-        amountReceivable: Number(form.totalAmount),
+        amountReceivable: isFinalized ? 0 : Number(form.totalAmount),
+        amountReceivableFinal: isFinalized ? Number(form.totalAmount) : 0,
         dueDate: new Date(form.dueDate).toISOString(),
         amountCollected: Number(form.paidAmount || 0),
         priceFinalizationStatus: form.priceFinalizationStatus,

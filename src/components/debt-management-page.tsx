@@ -8,27 +8,39 @@ import { UpdateDebtModal } from "./update-debt-modal.tsx"
 import { DebtDetailModal } from "./debt-detail-modal.tsx"
 import { fetchCustomerDebts } from "../services/customerDebtService.js"
 import React from "react"
-import { addPriceFinalizationDate } from "../services/priceFinalizationService.js"
+import { chooseFinalPrice } from "../services/priceFinalizationService.js"
 // ...existing code...
 import { Dialog } from "@headlessui/react"
 // Modal chọn ngày chốt giá
-function PriceFinalizationModal({ open, onClose, onSave, order }: { open: boolean, onClose: () => void, onSave: (date: string) => void, order: Order | null }) {
+function PriceFinalizationModal({ open, onClose, onSave, order }: { open: boolean, onClose: () => void, onSave: (date: string, finalPrice: number) => void, order: Order | null }) {
+  const [finalPrice, setFinalPrice] = useState(order?.unitPrice || 0);
+  useEffect(() => {
+    setFinalPrice(order?.unitPrice || 0);
+  }, [order]);
   if (!order) return null;
   return (
     <Dialog open={open} onClose={onClose} className="fixed z-50 inset-0 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-sm mx-auto">
         <Dialog.Title className="text-lg font-semibold mb-4">Chốt giá cho đơn hàng {order.contractNumber}</Dialog.Title>
-        <div className="flex flex-col items-center justify-center mb-4">
+        <div className="flex flex-col gap-4 mb-4">
+          <label className="block text-sm font-medium text-gray-700">Giá chốt</label>
+          <input
+            type="number"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            value={finalPrice}
+            onChange={e => setFinalPrice(Number(e.target.value))}
+            min={0}
+          />
           <button
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 mt-2"
             onClick={() => {
               const today = new Date();
               const yyyy = today.getFullYear();
               const mm = String(today.getMonth() + 1).padStart(2, '0');
               const dd = String(today.getDate()).padStart(2, '0');
               const dateStr = `${yyyy}-${mm}-${dd}`;
-              onSave(dateStr);
+              onSave(dateStr, finalPrice);
             }}
           >Chốt giá hôm nay</button>
         </div>
@@ -66,6 +78,11 @@ interface Order {
   priceFinalizationDate?: string
   priceFinalizationStatus?: boolean
   vat?: number
+
+  // Thêm các trường mới từ API
+  finalPrice?: number | null;
+  tempAmount?: number | null;
+  finalAmount?: number | null;
 }
 
 interface Customer {
@@ -133,6 +150,9 @@ export function DebtManagementPage() {
               contractNumber: o.orderNumber, // map orderNumber to contractNumber for FE
               quantity: o.quantity, // map quantity to Số lượng
               unitPrice: o.unitPrice, // map unitPrice to Đơn giá
+              finalPrice: o.finalPrice, // map finalPrice (giá chốt)
+              tempAmount: o.tempAmount, // map tempAmount (tạm tính)
+              finalAmount: o.finalAmount, // map finalAmount (giá chốt tổng)
               currency: o.currency === 0 ? 'USD' : 'VND', // map currency: 0 -> USD, 1/undefined -> VND
               // status and overdueDay are now provided by API
             })),
@@ -418,7 +438,9 @@ export function DebtManagementPage() {
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-600">Tên hàng</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-600">Ngày bán</th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Số lượng</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Đơn giá</th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Giá tạm tính</th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Giá chốt</th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Tạm tính</th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">
                                   Số tiền phải thu(VAT)
                                 </th>
@@ -437,9 +459,11 @@ export function DebtManagementPage() {
                                   <td className="px-4 py-4 text-sm text-black">{order.productName}</td>
                                   <td className="px-4 py-4 text-sm text-black">{order.saleDate}</td>
                                   <td className="px-4 py-4 text-sm text-right text-black">{order.quantity ?? '-'}</td>
-                                  <td className="px-4 py-4 text-sm text-right text-black">{order.unitPrice ? formatCurrency(order.unitPrice, order.currency === 'USD' ? 'USD' : 'VND') : '-'}</td>
+                                  <td className={`px-4 py-4 text-sm text-right ${order.finalPrice ? 'text-gray-400' : 'text-black'}`}>{order.unitPrice ? formatCurrency(order.unitPrice, order.currency === 'USD' ? 'USD' : 'VND') : '-'}</td>
+                                  <td className="px-4 py-4 text-sm text-right text-black">{order.finalPrice ? formatCurrency(order.finalPrice, order.currency === 'USD' ? 'USD' : 'VND') : '-'}</td>
+                                  <td className="px-4 py-4 text-sm text-right text-black">{order.tempAmount ? formatCurrency(order.tempAmount, order.currency === 'USD' ? 'USD' : 'VND') : '-'}</td>
                                   <td className="px-4 py-4 text-sm text-right text-black">
-                                    {formatCurrency(order.totalAmount, order.currency === 'USD' ? 'USD' : 'VND')}
+                                    {order.finalAmount ? formatCurrency(order.finalAmount, order.currency === 'USD' ? 'USD' : 'VND') : '-'}
                                     {/* VAT label */}
                                     {order.vat !== undefined && order.vat !== null && (
                                       <span className="ml-1 text-xs text-gray-500 font-semibold">
@@ -517,19 +541,16 @@ export function DebtManagementPage() {
                                           open={isPriceModalOpen}
                                           onClose={() => setIsPriceModalOpen(false)}
                                           order={selectedOrderForPrice}
-                                          onSave={async (date) => {
-                                            if (!selectedOrderForPrice || !date) return;
-                                            // Nếu backend .NET, cần gửi đúng định dạng ISO 8601: yyyy-MM-ddTHH:mm:ssZ
-                                            // Nếu chỉ gửi yyyy-MM-dd bị lỗi 0001-01-01 thì cần thêm giờ và timezone
+                                          onSave={async (date, finalPrice) => {
+                                            if (!selectedOrderForPrice || !date || !finalPrice) return;
                                             let finalDate = date;
                                             if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-                                              // Chuyển sang ISO string UTC
                                               finalDate = new Date(date + 'T00:00:00Z').toISOString();
                                             }
-                                            await addPriceFinalizationDate({
+                                            await chooseFinalPrice({
                                               orderID: selectedOrderForPrice.id,
                                               priceFinalizationDate: finalDate,
-                                              priceFinalizationStatus: 1
+                                              finalPrice: finalPrice
                                             });
                                             setIsPriceModalOpen(false);
                                             setSelectedOrderForPrice(null);
