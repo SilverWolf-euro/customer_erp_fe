@@ -98,7 +98,9 @@ interface Customer {
 
 
 
+
 export function DebtManagementPage() {
+
   const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
   const [selectedOrderForPrice, setSelectedOrderForPrice] = useState<Order | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -118,17 +120,34 @@ export function DebtManagementPage() {
   const [userRole] = useState<"director" | "sales">("sales")
   const [statusContract, setStatusContract] = useState(0)
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 20;
+
+  // Badge counts for each tab
+  type TabStatus = 'all' | 'coming-due' | 'due' | 'overdue' | 'paid' | 'not-due-yet';
+  const [tabCounts, setTabCounts] = useState<Record<TabStatus, number>>({
+    all: 0,
+    "coming-due": 0,
+    due: 0,
+    overdue: 0,
+    paid: 0,
+    "not-due-yet": 0,
+  });
+
   // Fetch data from API
-  const fetchData = async () => {
+  const fetchData = async (page = currentPage) => {
     try {
       const params: any = {
         search: searchTerm,
         statusContract,
-        pageSize: 20,
-        currentPage: 1,
+        pageSize,
+        currentPage: page,
       };
       if (fromDate) params.fromDate = fromDate;
       if (toDate) params.toDate = toDate;
+      // Lấy dữ liệu trang hiện tại
       if (activeTab && activeTab !== "all") {
         const statusMap: Record<string, number> = {
           "coming-due": 1,
@@ -141,7 +160,6 @@ export function DebtManagementPage() {
       }
       const res = await fetchCustomerDebts(params)
       if (res?.data?.object?.listData) {
-        // Map API fields to FE fields if needed
         setCustomers(
           res.data.object.listData.map((c: any) => ({
             ...c,
@@ -158,21 +176,59 @@ export function DebtManagementPage() {
             })),
           }))
         );
-        // setTotalCount(res.data.object.totalCount); // Đã loại bỏ
+        // Tính tổng số trang
+        const totalCount = res.data.object.totalCount || 0;
+        setTotalPages(Math.max(1, Math.ceil(totalCount / pageSize)));
       } else {
         setCustomers([]);
-        // setTotalCount(0); // Đã loại bỏ
+        setTotalPages(1);
       }
+
+      // Lấy tổng số cho từng trạng thái (badge)
+      const statusMap: Record<string, number> = {
+        "coming-due": 1,
+        "due": 2,
+        "overdue": 3,
+        "paid": 4,
+        "not-due-yet": 5,
+      };
+      const countPromises = [
+        fetchCustomerDebts({ ...params, status: undefined }), // all
+        ...Object.entries(statusMap).map(([key, value]) =>
+          fetchCustomerDebts({ ...params, status: value })
+        ),
+      ];
+      const results = await Promise.all(countPromises);
+      setTabCounts({
+        all: results[0]?.data?.object?.totalCount || 0,
+        "coming-due": results[1]?.data?.object?.totalCount || 0,
+        due: results[2]?.data?.object?.totalCount || 0,
+        overdue: results[3]?.data?.object?.totalCount || 0,
+        paid: results[4]?.data?.object?.totalCount || 0,
+        "not-due-yet": results[5]?.data?.object?.totalCount || 0,
+      });
     } catch (e) {
       setCustomers([])
-      // setTotalCount(0) // Đã loại bỏ
+      setTotalPages(1);
+      setTabCounts({
+        all: 0,
+        "coming-due": 0,
+        due: 0,
+        overdue: 0,
+        paid: 0,
+        "not-due-yet": 0,
+      });
     }
   }
 
   useEffect(() => {
-    fetchData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setCurrentPage(1); // Reset về trang 1 khi filter thay đổi
   }, [searchTerm, statusContract, activeTab, fromDate, toDate])
+
+  useEffect(() => {
+    fetchData(currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, statusContract, activeTab, fromDate, toDate, currentPage])
 
   const toggleCustomerExpand = (customerId: string) => {
     const newExpanded = new Set(expandedCustomers)
@@ -206,10 +262,8 @@ export function DebtManagementPage() {
     })
   }
 
-  const getTabCount = (status: string) => {
-    if (status === "all") return customers.length
-    return customers.filter((c) => c.orders.some((o) => o.status === status)).length
-  }
+  // Lấy tổng số cho badge từ tabCounts
+  const getTabCount = (status: TabStatus) => tabCounts[status] || 0;
 
   const formatCurrency = (amount: number, currency: 'VND' | 'USD' = 'VND') => {
     let locale = currency === 'USD' ? 'en-US' : 'vi-VN';
@@ -333,7 +387,7 @@ export function DebtManagementPage() {
             ].map((tab) => (
               <button
                 key={tab.value}
-                onClick={() => setActiveTab(tab.value)}
+                onClick={() => setActiveTab(tab.value as TabStatus)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
                   activeTab === tab.value
                     ? "bg-white text-gray-900 shadow-sm"
@@ -341,15 +395,36 @@ export function DebtManagementPage() {
                 }`}
               >
                 {tab.label}
-                <span
-                  className={`px-2 py-0.5 text-xs rounded ${
-                    activeTab === tab.value ? "bg-gray-100 text-gray-700" : "bg-gray-200 text-gray-600"
-                  }`}
-                >
-                  {getTabCount(tab.value)}
-                </span>
+                {(activeTab === "all" || activeTab === tab.value) && (
+                  <span
+                    className={`px-2 py-0.5 text-xs rounded ${
+                      activeTab === tab.value ? "bg-gray-100 text-gray-700" : "bg-gray-200 text-gray-600"
+                    }`}
+                  >
+                    {getTabCount(tab.value as TabStatus)}
+                  </span>
+                )}
               </button>
             ))}
+          </div>
+
+          {/* Pagination controls */}
+          <div className="flex justify-end mt-4">
+            <button
+              className="px-3 py-1 mx-1 rounded border border-gray-300 bg-white disabled:opacity-50"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              Trang trước
+            </button>
+            <span className="px-2 py-1">{currentPage} / {totalPages}</span>
+            <button
+              className="px-3 py-1 mx-1 rounded border border-gray-300 bg-white disabled:opacity-50"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Trang sau
+            </button>
           </div>
 
           <div className="space-y-4 mt-6">

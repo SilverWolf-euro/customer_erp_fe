@@ -234,16 +234,12 @@ export function UpdateDebtModal({ open, onOpenChange, order, customer, onPayment
               </div>
               <div className="space-y-2">
                 <label htmlFor="total-amount" className="block text-sm font-medium text-gray-700">
-                  Số tiền phải thu ({(order as any).currency === 'USD' ? 'USD' : 'VNĐ'})
+                  Giá tạm tính ({(order as any).currency === 'USD' ? 'USD' : 'VNĐ'})
                 </label>
                 <input
                   id="total-amount"
                   type="text"
-                  value={
-                    totalAmount && !isNaN(Number(totalAmount)) && Number(totalAmount) !== 0
-                      ? formatCurrency(Number(totalAmount))
-                      : formatCurrency(0)
-                  }
+                  value={order.tempAmount != null ? formatCurrency(order.tempAmount) : formatCurrency(0)}
                   disabled
                   className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500 cursor-not-allowed"
                 />
@@ -287,11 +283,11 @@ export function UpdateDebtModal({ open, onOpenChange, order, customer, onPayment
                 <label className="block text-sm font-medium text-gray-700">Còn phải thu</label>
                 <div className="text-2xl font-bold text-red-600">
                   {formatCurrency(
-                    order.priceFinalizationStatus && order.finalAmount != null
+                    order.finalAmount != null
                       ? order.finalAmount - paymentHistory.reduce((sum, p) => sum + (p.amount || 0), 0)
                       : order.tempAmount != null
                         ? order.tempAmount - paymentHistory.reduce((sum, p) => sum + (p.amount || 0), 0)
-                        : order.remaining
+                        : 0
                   )}
                 </div>
               </div>
