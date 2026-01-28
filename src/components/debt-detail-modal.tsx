@@ -1,4 +1,7 @@
+
+
 "use client"
+import { useState } from "react";
 
 interface PaymentHistory {
   date: string
@@ -6,15 +9,30 @@ interface PaymentHistory {
 }
 
 interface Order {
+  id: string
   contractNumber: string
   productName: string
   saleDate: string
   totalAmount: number
+  paid: number
   paidHistory: PaymentHistory[]
   remaining: number
-  quantity: number
-  unitPrice: number
+  paymentTerm: number
   dueDate: string
+  status: "coming-due" | "due" | "overdue" | "paid" | "not-due-yet"
+  overdueDay?: number
+  quantity: number
+  unitPrice: number | null;
+  currency?: 'VND' | 'USD';
+  priceFinalizationDate?: string
+  priceFinalizationStatus?: boolean
+  vat?: number
+  deposit?: number
+
+  // Thêm các trường mới từ API
+  finalPrice?: number | null;
+  tempAmount?: number | null;
+  finalAmount?: number | null;
 }
 
 interface Customer {
@@ -31,6 +49,7 @@ interface DebtDetailModalProps {
 }
 
 export function DebtDetailModal({ open, onOpenChange, order, customer }: DebtDetailModalProps) {
+    const [customPaid, setCustomPaid] = useState<number>(0);
   const formatCurrency = (amount: number) => {
     const currency = (order as any).currency === 'USD' ? 'USD' : 'VND';
     const locale = currency === 'USD' ? 'en-US' : 'vi-VN';
@@ -96,15 +115,27 @@ export function DebtDetailModal({ open, onOpenChange, order, customer }: DebtDet
               </div>
               <div className="space-y-1">
                 <label className="block text-xs text-gray-500">Số tiền phải thu ({(order as any).currency === 'USD' ? 'USD' : 'VNĐ'})</label>
-                <div className="font-medium text-gray-900">{formatCurrency(order.totalAmount)}</div>
+                <div className="font-medium text-gray-900">
+                  {order.priceFinalizationStatus && order.finalAmount != null
+                    ? formatCurrency(order.finalAmount)
+                    : formatCurrency(order.tempAmount || 0)}
+                </div>
               </div>
               <div className="space-y-1">
                 <label className="block text-xs text-gray-500">Số lượng</label>
                 <div className="font-medium text-gray-900">{order.quantity}</div>
               </div>
               <div className="space-y-1">
-                <label className="block text-xs text-gray-500">Đơn giá ({(order as any).currency === 'USD' ? 'USD' : 'VNĐ'})</label>
-                <div className="font-medium text-gray-900">{formatCurrency(order.unitPrice)}</div>
+                <label className="block text-xs text-gray-500">Giá tạm tính({(order as any).currency === 'USD' ? 'USD' : 'VNĐ'})</label>
+                <div className="font-medium text-gray-900">{formatCurrency(order.unitPrice || 0)}</div>
+              </div>
+              <div className="space-y-1">
+                <label className="block text-xs text-gray-500">Giá chốt({(order as any).currency === 'USD' ? 'USD' : 'VNĐ'})</label>
+                <div className="font-medium text-gray-900">
+                  {(order.finalPrice && order.finalPrice !== 0)
+                    ? formatCurrency(order.finalPrice)
+                    : <span className="text-red-600">Chưa chốt giá</span>}
+                </div>
               </div>
               <div className="space-y-1">
                 <label className="block text-xs text-gray-500">Ngày đến hạn</label>
@@ -122,9 +153,15 @@ export function DebtDetailModal({ open, onOpenChange, order, customer }: DebtDet
                     : <span className="text-red-600">Chưa chốt giá</span>}
                 </div>
               </div>
+              <div className="space-y-1">
+                <label className="block text-xs text-gray-500">Tiền cọc</label>
+                <div className="font-medium text-gray-900">{formatCurrency(order.deposit || 0)}</div>
+              </div>
               <div className="space-y-1 col-span-2">
                 <label className="block text-xs text-gray-500">Còn phải thu</label>
-                <div className="text-2xl font-bold text-red-600">{formatCurrency(order.remaining)}</div>
+                <div className="text-2xl font-bold text-red-600">
+                  {formatCurrency(order.remaining)}
+                </div>
               </div>
             </div>
           </div>

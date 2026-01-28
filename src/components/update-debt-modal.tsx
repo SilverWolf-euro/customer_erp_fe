@@ -21,8 +21,14 @@ interface Order {
   remaining: number
   quantity: number
   unitPrice: number
+  finalPrice?: number | null;
+  tempAmount?: number | null;
+  finalAmount?: number | null;
+  currency?: 'VND' | 'USD';
   paymentTerm: number
   dueDate: string
+  priceFinalizationDate?: string
+  priceFinalizationStatus?: boolean
 }
 
 interface Customer {
@@ -44,7 +50,9 @@ export function UpdateDebtModal({ open, onOpenChange, order, customer, onPayment
   const [paymentTerm, setPaymentTerm] = useState(order.paymentTerm !== undefined && order.paymentTerm !== null ? order.paymentTerm.toString() : "")
   const [dueDate, setDueDate] = useState(order.dueDate)
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>(
-    Array.isArray(order.paidHistory) ? order.paidHistory.map((p) => ({ ...p, canDelete: false })) : [],
+    Array.isArray(order.paidHistory) && order.paidHistory.length > 0
+      ? order.paidHistory.map((p) => ({ ...p, canDelete: false }))
+      : [],
   )
 
   // Reset state when order or customer changes
@@ -53,7 +61,9 @@ export function UpdateDebtModal({ open, onOpenChange, order, customer, onPayment
     setTotalAmount(order.totalAmount !== undefined && order.totalAmount !== null ? order.totalAmount.toString() : "")
     setPaymentTerm(order.paymentTerm !== undefined && order.paymentTerm !== null ? order.paymentTerm.toString() : "")
     setDueDate(order.dueDate)
-    setPaymentHistory(Array.isArray(order.paidHistory) ? order.paidHistory.map((p) => ({ ...p, canDelete: false })) : [])
+    setPaymentHistory(Array.isArray(order.paidHistory) && order.paidHistory.length > 0
+      ? order.paidHistory.map((p) => ({ ...p, canDelete: false }))
+      : [])
   }, [order, customer])
 
   const hasExistingPayments = order.paidHistory.length > 0
@@ -101,6 +111,12 @@ export function UpdateDebtModal({ open, onOpenChange, order, customer, onPayment
   const handleUpdate = async () => {
     // Lọc các payment mới (canDelete = true và có đủ thông tin)
     const newPayments = paymentHistory.filter(p => p.canDelete && p.amount > 0 && p.date)
+    // Kiểm tra có khoản nào chưa chọn ngày thu
+    const missingDate = paymentHistory.some(p => p.canDelete && p.amount > 0 && !p.date)
+    if (missingDate) {
+      alert('Vui lòng chọn ngày thu cho tất cả các khoản thanh toán mới!');
+      return;
+    }
     // Tổng số tiền đã thu mới
     const totalNewPaid = newPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
     // Số còn phải thu hiện tại
@@ -199,6 +215,15 @@ export function UpdateDebtModal({ open, onOpenChange, order, customer, onPayment
                 />
               </div>
               <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Giá chốt ({(order as any).currency === 'USD' ? 'USD' : 'VNĐ'})</label>
+                <input
+                  type="text"
+                  value={order.finalPrice && order.finalPrice !== 0 ? formatCurrency(order.finalPrice) : 'Chưa chốt giá'}
+                  disabled
+                  className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 cursor-not-allowed"
+                />
+              </div>
+              <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">Ngày bán hàng</label>
                 <input
                   type="text"
@@ -213,8 +238,12 @@ export function UpdateDebtModal({ open, onOpenChange, order, customer, onPayment
                 </label>
                 <input
                   id="total-amount"
-                  type="number"
-                  value={totalAmount}
+                  type="text"
+                  value={
+                    totalAmount && !isNaN(Number(totalAmount)) && Number(totalAmount) !== 0
+                      ? formatCurrency(Number(totalAmount))
+                      : formatCurrency(0)
+                  }
                   disabled
                   className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500 cursor-not-allowed"
                 />
@@ -256,7 +285,15 @@ export function UpdateDebtModal({ open, onOpenChange, order, customer, onPayment
               </div>
               <div className="space-y-2 col-span-2">
                 <label className="block text-sm font-medium text-gray-700">Còn phải thu</label>
-                <div className="text-2xl font-bold text-red-600">{formatCurrency(calculateRemaining())}</div>
+                <div className="text-2xl font-bold text-red-600">
+                  {formatCurrency(
+                    order.priceFinalizationStatus && order.finalAmount != null
+                      ? order.finalAmount - paymentHistory.reduce((sum, p) => sum + (p.amount || 0), 0)
+                      : order.tempAmount != null
+                        ? order.tempAmount - paymentHistory.reduce((sum, p) => sum + (p.amount || 0), 0)
+                        : order.remaining
+                  )}
+                </div>
               </div>
             </div>
           </div>
