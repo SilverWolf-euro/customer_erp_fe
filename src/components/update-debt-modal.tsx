@@ -40,20 +40,20 @@ interface UpdateDebtModalProps {
 
 export function UpdateDebtModal({ open, onOpenChange, order, customer, onPaymentAdded }: UpdateDebtModalProps) {
   const [salesPerson, setSalesPerson] = useState(customer.salesPerson)
-  const [totalAmount, setTotalAmount] = useState(order.totalAmount.toString())
-  const [paymentTerm, setPaymentTerm] = useState(order.paymentTerm.toString())
+  const [totalAmount, setTotalAmount] = useState(order.totalAmount !== undefined && order.totalAmount !== null ? order.totalAmount.toString() : "")
+  const [paymentTerm, setPaymentTerm] = useState(order.paymentTerm !== undefined && order.paymentTerm !== null ? order.paymentTerm.toString() : "")
   const [dueDate, setDueDate] = useState(order.dueDate)
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>(
-    order.paidHistory.map((p) => ({ ...p, canDelete: false })),
+    Array.isArray(order.paidHistory) ? order.paidHistory.map((p) => ({ ...p, canDelete: false })) : [],
   )
 
   // Reset state when order or customer changes
   useEffect(() => {
     setSalesPerson(customer.salesPerson)
-    setTotalAmount(order.totalAmount.toString())
-    setPaymentTerm(order.paymentTerm.toString())
+    setTotalAmount(order.totalAmount !== undefined && order.totalAmount !== null ? order.totalAmount.toString() : "")
+    setPaymentTerm(order.paymentTerm !== undefined && order.paymentTerm !== null ? order.paymentTerm.toString() : "")
     setDueDate(order.dueDate)
-    setPaymentHistory(order.paidHistory.map((p) => ({ ...p, canDelete: false })))
+    setPaymentHistory(Array.isArray(order.paidHistory) ? order.paidHistory.map((p) => ({ ...p, canDelete: false })) : [])
   }, [order, customer])
 
   const hasExistingPayments = order.paidHistory.length > 0
