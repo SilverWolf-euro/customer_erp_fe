@@ -83,6 +83,7 @@ interface Order {
   finalPrice?: number | null;
   tempAmount?: number | null;
   finalAmount?: number | null;
+  deposit?: number; // Tiền cọc
 }
 
 interface Customer {
@@ -517,7 +518,13 @@ export function DebtManagementPage() {
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Giá chốt</th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Tạm tính</th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">
-                                  Số tiền phải thu(VAT)
+                                  Số tiền phải thu
+                                </th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">
+                                  VAT
+                                </th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">
+                                  Tiền cọc
                                 </th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Đã thu</th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-600">Còn phải thu</th>
@@ -539,21 +546,23 @@ export function DebtManagementPage() {
                                   <td className="px-4 py-4 text-sm text-right text-black">{order.tempAmount ? formatCurrency(order.tempAmount, order.currency === 'USD' ? 'USD' : 'VND') : '-'}</td>
                                   <td className="px-4 py-4 text-sm text-right text-black">
                                     {order.finalAmount ? formatCurrency(order.finalAmount, order.currency === 'USD' ? 'USD' : 'VND') : '-'}
-                                    {/* VAT label */}
-                                    {order.vat !== undefined && order.vat !== null && (
-                                      <span className="ml-1 text-xs text-gray-500 font-semibold">
-                                        {(() => {
-                                          switch (order.vat) {
-                                            case 1: return '(0%)';
-                                            case 2: return '(5%)';
-                                            case 3: return '(8%)';
-                                            case 4: return '(10%)';
-                                            case 5: return '(KCT)';
-                                            default: return '';
-                                          }
-                                        })()}
-                                      </span>
-                                    )}
+                                  </td>
+                                  <td className="px-4 py-4 text-sm text-right text-black">
+                                    {order.vat !== undefined && order.vat !== null ? (
+                                      (() => {
+                                        switch (order.vat) {
+                                          case 1: return '0%';
+                                          case 2: return '5%';
+                                          case 3: return '8%';
+                                          case 4: return '10%';
+                                          case 5: return 'KCT';
+                                          default: return '';
+                                        }
+                                      })()
+                                    ) : '-'}
+                                  </td>
+                                  <td className="px-4 py-4 text-sm text-right text-black">
+                                    {formatCurrency(order.deposit ?? 0, order.currency === 'USD' ? 'USD' : 'VND')}
                                   </td>
                                   <td className="px-4 py-4 text-sm text-right">
                                     <div className="space-y-1">
