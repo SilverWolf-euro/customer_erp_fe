@@ -283,11 +283,12 @@ export function UpdateDebtModal({ open, onOpenChange, order, customer, onPayment
                 <label className="block text-sm font-medium text-gray-700">Còn phải thu</label>
                 <div className="text-2xl font-bold text-red-600">
                   {formatCurrency(
-                    order.finalAmount != null
-                      ? order.finalAmount - paymentHistory.reduce((sum, p) => sum + (p.amount || 0), 0)
-                      : order.tempAmount != null
-                        ? order.tempAmount - paymentHistory.reduce((sum, p) => sum + (p.amount || 0), 0)
-                        : 0
+                    (order.finalAmount && order.finalAmount > 0
+                      ? order.finalAmount
+                      : order.tempAmount && order.tempAmount > 0
+                        ? order.tempAmount
+                        : order.remaining
+                    ) - paymentHistory.reduce((sum, p) => sum + (p.amount || 0), 0)
                   )}
                 </div>
               </div>
