@@ -84,6 +84,7 @@ interface Order {
   tempAmount?: number | null;
   finalAmount?: number | null;
   deposit?: number; // Tiền cọc
+  totalValue: number
 }
 
 interface Customer {

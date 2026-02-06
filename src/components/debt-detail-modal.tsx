@@ -28,6 +28,7 @@ interface Order {
   priceFinalizationStatus?: boolean
   vat?: number
   deposit?: number
+  totalValue: number
 
   // Thêm các trường mới từ API
   finalPrice?: number | null;
@@ -163,6 +164,12 @@ export function DebtDetailModal({ open, onOpenChange, order, customer }: DebtDet
                   {formatCurrency(order.remaining)}
                 </div>
               </div>
+              {/* <div className="space-y-1 col-span-2">
+                <label className="block text-xs text-gray-500">Tổng đơn hàng</label>
+                <div className="text-2xl font-bold text-red-600">
+                  {formatCurrency(order.totalValue)}
+                </div>
+              </div> */}
             </div>
           </div>
 
