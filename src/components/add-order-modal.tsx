@@ -143,7 +143,7 @@ export function AddOrderModal({
       return alert("Ngày đến hạn phải lớn hơn ngày bán");
     }
 
-    if (+form.quantity <= 0) return alert("Số lượng phải > 0");
+    if (!/^\d+(\.\d{1})?$/.test(form.quantity) || +form.quantity <= 0) return alert("Số lượng phải là số dương, tối đa 1 số thập phân");
     if (+form.unitPrice <= 0) return alert("Đơn giá phải > 0");
     if (form.currency === 'USD' && !/^\d+(\.\d{1,6})?$/.test(form.unitPrice)) {
       return alert('Đơn giá USD phải là số dương, tối đa 6 số thập phân');
@@ -236,21 +236,24 @@ export function AddOrderModal({
               <label className="block font-medium mb-1">Số lượng (Kg) *</label>
               <input
                 name="quantity"
-                value={form.quantity
-                  ? (form.currency === 'VND'
-                      ? Number(form.quantity).toLocaleString('vi-VN')
-                      : Number(form.quantity).toLocaleString('en-US'))
-                  : ''}
+                value={form.quantity || ''}
                 onChange={e => {
-                  // Cho phép nhập số có dấu chấm hoặc phẩy
-                  let raw = e.target.value.replace(/[.,]/g, "");
-                  if (/^\d*$/.test(raw)) {
-                    handleChange({ ...e, target: { ...e.target, value: raw, name: 'quantity' } });
+                  let val = e.target.value.replace(/[^\d.]/g, '');
+                  // Chỉ cho phép 1 dấu chấm
+                  const parts = val.split('.');
+                  if (parts.length > 2) {
+                    val = parts[0] + '.' + parts.slice(1).join('');
                   }
+                  // Giới hạn 1 số sau dấu chấm
+                  if (val.includes('.')) {
+                    const [intPart, decPart] = val.split('.');
+                    val = intPart + '.' + decPart.slice(0, 1);
+                  }
+                  handleChange({ ...e, target: { ...e.target, value: val, name: 'quantity' } });
                 }}
                 placeholder="Nhập số lượng"
                 className="w-full border p-2 rounded"
-                inputMode="numeric"
+                inputMode="decimal"
                 autoComplete="off"
               />
             </div>

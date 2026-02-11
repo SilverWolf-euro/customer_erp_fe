@@ -233,8 +233,8 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
       // Validate quantity
       if (!order.quantity) {
         err.quantity = "Vui lòng nhập số lượng";
-      } else if (isNaN(Number(order.quantity)) || Number(order.quantity) <= 0 || !/^[0-9]+$/.test(order.quantity)) {
-        err.quantity = "Số lượng phải là số nguyên dương";
+      } else if (isNaN(Number(order.quantity)) || Number(order.quantity) <= 0 || !/^\d+(\.\d{1})?$/.test(order.quantity)) {
+        err.quantity = "Số lượng phải là số dương, tối đa 1 số thập phân";
       }
       // Validate unit price
       if (!order.unitPrice) {
@@ -550,15 +550,23 @@ export function AddDebtModal({ isOpen, onOpenChange, onDebtAdded }: AddDebtModal
                       id={`quantity-${index}`}
                       type="text"
                       placeholder="Nhập số lượng"
-                      value={order.quantity ? Number(order.quantity).toLocaleString('vi-VN') : ''}
-                      min={1}
-                      step={1}
-                      onChange={(e) => {
-                        // Chỉ cho phép số nguyên dương, bỏ dấu chấm khi lưu
-                        const raw = e.target.value.replace(/\./g, '').replace(/[^\d]/g, '');
-                        if (/^\d*$/.test(raw)) {
-                          updateOrder(index, "quantity", raw);
+                      value={order.quantity || ''}
+                      min={0.1}
+                      step={0.1}
+                      inputMode="decimal"
+                      onChange={e => {
+                        let val = e.target.value.replace(/[^\d.]/g, '');
+                        // Chỉ cho phép 1 dấu chấm
+                        const parts = val.split('.');
+                        if (parts.length > 2) {
+                          val = parts[0] + '.' + parts.slice(1).join('');
                         }
+                        // Giới hạn 1 số sau dấu chấm
+                        if (val.includes('.')) {
+                          const [intPart, decPart] = val.split('.');
+                          val = intPart + '.' + decPart.slice(0, 1);
+                        }
+                        updateOrder(index, 'quantity', val);
                       }}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
